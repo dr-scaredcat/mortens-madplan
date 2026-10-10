@@ -140,7 +140,8 @@ function WeekPlanPage() {
     () => new Set(tags.filter((t) => t.is_side_dish).map((t) => t.id)),
     [tags],
   );
-  const defaultServings = settings?.planner.defaultServings ?? 4;
+  // Retterne skaleres som standard til ugeplanens antal personer (Admin → Ugeplan)
+  const defaultServings = settings?.planner.planServings ?? 2;
 
   /** Den viste dag: gemt række, ellers standardugen fra indstillingerne. */
   const dayRow = (day: string): PlanDayRow => {

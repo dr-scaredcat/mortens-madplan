@@ -36,7 +36,19 @@ export type AppSettings = {
   headingFont: FontKey;
   titleFont: FontKey;
   header: HeaderSettings;
+  headingScale: HeadingScale;
 };
+
+/** Skalering af overskrifter i procent (Admin → Temaer). */
+export type HeadingScale = { main: number; sub: number };
+export const DEFAULT_HEADING_SCALE: HeadingScale = { main: 100, sub: 100 };
+
+function parseHeadingScale(v: unknown): HeadingScale {
+  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const pct = (x: unknown, d: number) =>
+    typeof x === "number" && x >= 50 && x <= 250 ? x : d;
+  return { main: pct(o.main, 100), sub: pct(o.sub, 100) };
+}
 
 /** Logo og titel i toppen af siden (Admin → Generelt). */
 export type HeaderSettings = {
@@ -94,6 +106,7 @@ export async function fetchSettings(): Promise<AppSettings> {
     headingFont: isFontKey(get("heading_font")) ? (get("heading_font") as FontKey) : "default",
     titleFont: isFontKey(get("title_font")) ? (get("title_font") as FontKey) : "default",
     header: parseHeader(get("header")),
+    headingScale: parseHeadingScale(get("heading_scale")),
   };
 }
 
