@@ -185,7 +185,7 @@ export function CookMode({
                 return (
                   <li key={i.id}>
                     {i.section && i.section !== prevSection && (
-                      <p className="px-2 pt-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      <p className="heading-sm px-2 pt-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                         {i.section}
                       </p>
                     )}
@@ -243,7 +243,7 @@ export function CookMode({
                 onClick={() => setStep((s) => Math.min(s + 1, steps.length - 1))}
                 className="mt-2 border-t border-border pt-4 text-left text-muted-foreground/70 transition hover:text-muted-foreground"
               >
-                <span className="text-xs font-medium uppercase tracking-wide">
+                <span className="heading-sm text-xs font-medium uppercase tracking-wide">
                   Næste{next.section && next.section !== current.section ? ` · ${next.section}` : ""}
                 </span>
                 <span className="mt-1 line-clamp-4 block text-lg leading-relaxed">{next.text}</span>

@@ -161,6 +161,12 @@
   h2, h3 {
     zoom: var(--heading-scale-sub, 1);
   }
+  /* Små overskrifter og mærkater (fx afsnit, kategorier, "weekend", datoer) */
+  .heading-sm,
+  h2.heading-sm,
+  h3.heading-sm {
+    zoom: var(--heading-scale-small, 1);
+  }
 
   .font-title {
     font-family: var(--font-title);

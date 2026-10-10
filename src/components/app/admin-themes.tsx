@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeEditor } from "@/components/app/theme-editor";
 import { ThemePreview } from "@/components/app/theme-preview";
 import { AdminFonts } from "@/components/app/admin-fonts";
+import { AdminBrand } from "@/components/app/admin-brand";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Check } from "lucide-react";
 
@@ -94,6 +95,8 @@ export function AdminThemes() {
 
   return (
     <div className="space-y-6">
+      <AdminBrand />
+
       <AdminFonts />
 
       <div className="flex items-center justify-between">

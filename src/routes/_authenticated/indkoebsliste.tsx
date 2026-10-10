@@ -129,7 +129,7 @@ function ShoppingPage() {
             if (g.open.length === 0 && visibleDone.length === 0) return null;
             return (
               <section key={g.id}>
-                <h2 className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <h2 className="heading-sm mb-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {g.name}
                 </h2>
                 <Card className="divide-y divide-border">

@@ -35,7 +35,7 @@ export function TagChips({
     <div className="space-y-2">
       {sections.map((s) => (
         <div key={s.id} className="grid gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-start">
-          <span className="text-xs font-medium text-muted-foreground sm:pt-1">{s.name}</span>
+          <span className="heading-sm text-xs font-medium text-muted-foreground sm:pt-1">{s.name}</span>
           {/* Taggene ombrydes i deres egen kolonne, så en ny linje starter under det første tag */}
           <div className="flex flex-wrap gap-1.5">
           {s.tags.map((t) => {

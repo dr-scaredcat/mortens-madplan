@@ -31,14 +31,14 @@ export function AdminFonts() {
   // Forlader man siden uden at gemme, vendes tilbage til den gemte størrelse
   useEffect(() => {
     return () => {
-      if (data) applyHeadingScale(data.headingScale.main, data.headingScale.sub);
+      if (data) applyHeadingScale(data.headingScale.main, data.headingScale.sub, data.headingScale.small);
     };
   }, [data]);
 
   // Vis ændringen live på hele siden, mens man trækker i skyderen
   const changeScale = (next: HeadingScale) => {
     setScale(next);
-    applyHeadingScale(next.main, next.sub);
+    applyHeadingScale(next.main, next.sub, next.small);
   };
 
   async function saveScale() {
@@ -55,7 +55,10 @@ export function AdminFonts() {
   }
 
   const scaleChanged =
-    !!data && (scale.main !== data.headingScale.main || scale.sub !== data.headingScale.sub);
+    !!data &&
+    (scale.main !== data.headingScale.main ||
+      scale.sub !== data.headingScale.sub ||
+      scale.small !== data.headingScale.small);
 
   // Indlæs alle valgmulighederne, så forhåndsvisningen i listen er korrekt
   useEffect(() => {
@@ -126,7 +129,8 @@ export function AdminFonts() {
         {(
           [
             { key: "main", label: "Sideoverskrifter (fx “Opskrifter”)" },
-            { key: "sub", label: "Underoverskrifter (fx “Ingredienser”, kategorier)" },
+            { key: "sub", label: "Underoverskrifter (fx “Ingredienser”, ugedage, kategorier)" },
+            { key: "small", label: "Små overskrifter (fx “weekend”, datoer, afsnit)" },
           ] as const
         ).map((row) => (
           <div key={row.key} className="space-y-2">

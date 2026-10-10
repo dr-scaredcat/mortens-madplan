@@ -376,15 +376,17 @@ function WeekPlanPage() {
             >
               <div className="mb-2 flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-serif text-lg leading-tight">
-                    {WEEKDAYS[isoWeekday(day) - 1]}
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-serif text-lg leading-tight">
+                      {WEEKDAYS[isoWeekday(day) - 1]}
+                    </h3>
                     {isWeekendDay(day) && (
-                      <Badge variant="outline" className="ml-2 align-middle text-[10px] font-normal">
+                      <Badge variant="outline" className="heading-sm text-[10px] font-normal">
                         weekend
                       </Badge>
                     )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
+                  </div>
+                  <p className="heading-sm text-xs text-muted-foreground">
                     {formatDate(day)}
                     {isToday && " · i dag"}
                   </p>
