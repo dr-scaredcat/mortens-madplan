@@ -136,7 +136,7 @@ function RecipePage() {
       </div>
 
       <Card className="overflow-hidden">
-        <div className="aspect-[16/9] w-full bg-muted">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
           <RecipeImage src={recipe.image_url} alt={recipe.title} />
         </div>
         <div className="space-y-3 p-4 sm:p-5">

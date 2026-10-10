@@ -331,7 +331,7 @@ export function RecipeForm({
     <form onSubmit={submit} className="space-y-6">
       {/* Billede */}
       <Card className="overflow-hidden">
-        <div className="relative aspect-[16/9] w-full bg-muted">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
           <RecipeImage src={imageUrl} alt={title || "Opskrift"} />
           {uploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-background/60">
