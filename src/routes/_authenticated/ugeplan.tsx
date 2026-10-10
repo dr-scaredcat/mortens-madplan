@@ -376,15 +376,17 @@ function WeekPlanPage() {
             >
               <div className="mb-2 flex items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-serif text-lg leading-tight">
-                    {WEEKDAYS[isoWeekday(day) - 1]}
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-serif text-lg leading-tight">
+                      {WEEKDAYS[isoWeekday(day) - 1]}
+                    </h3>
                     {isWeekendDay(day) && (
-                      <Badge variant="outline" className="ml-2 align-middle text-[10px] font-normal">
+                      <Badge variant="outline" className="heading-sm text-[10px] font-normal">
                         weekend
                       </Badge>
                     )}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
+                  </div>
+                  <p className="heading-sm text-xs text-muted-foreground">
                     {formatDate(day)}
                     {isToday && " · i dag"}
                   </p>
@@ -421,8 +423,8 @@ function WeekPlanPage() {
                       params={{ id: recipe.id }}
                       className="flex min-w-0 flex-1 items-center gap-3"
                     >
-                      <div className="h-16 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
-                        <RecipeImage src={recipe.image_url} alt={recipe.title} />
+                      <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
+                        <RecipeImage src={recipe.image_url} alt={recipe.title} showPlaceholderText={false} />
                       </div>
                       <div className="min-w-0">
                         <p className="truncate font-medium">{recipe.title}</p>
@@ -644,8 +646,8 @@ function RecipePickerDialog({
                 onClick={() => onPick(recipe)}
                 className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-muted"
               >
-                <div className="h-12 w-14 shrink-0 overflow-hidden rounded bg-muted">
-                  <RecipeImage src={recipe.image_url} alt="" />
+                <div className="relative h-12 w-14 shrink-0 overflow-hidden rounded bg-muted">
+                  <RecipeImage src={recipe.image_url} alt="" showPlaceholderText={false} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-1.5 truncate font-medium">
@@ -730,8 +732,8 @@ function SidePickerDialog({
                 onClick={() => onPick(recipe)}
                 className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-muted"
               >
-                <div className="h-12 w-14 shrink-0 overflow-hidden rounded bg-muted">
-                  <RecipeImage src={recipe.image_url} alt="" />
+                <div className="relative h-12 w-14 shrink-0 overflow-hidden rounded bg-muted">
+                  <RecipeImage src={recipe.image_url} alt="" showPlaceholderText={false} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{recipe.title}</p>

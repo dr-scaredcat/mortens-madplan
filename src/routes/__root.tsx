@@ -56,6 +56,7 @@ const THEME_BOOT_SCRIPT = `
       st.setProperty("--font-title", f.title || f.heading);
       if (f.main) st.setProperty("--heading-scale-main", String(f.main / 100));
       if (f.sub) st.setProperty("--heading-scale-sub", String(f.sub / 100));
+      if (f.small) st.setProperty("--heading-scale-small", String(f.small / 100));
       if (f.href) {
         var l = document.createElement("link");
         l.id = "app-fonts"; l.rel = "stylesheet"; l.href = f.href;
@@ -196,7 +197,7 @@ function ThemeLoader() {
       ?.setAttribute("content", data.appName);
 
     applyFonts(data.headingFont, data.titleFont);
-    applyHeadingScale(data.headingScale.main, data.headingScale.sub);
+    applyHeadingScale(data.headingScale.main, data.headingScale.sub, data.headingScale.small);
     try {
       const stack = (k: string) => FONT_OPTIONS.find((o) => o.key === k)?.stack;
       localStorage.setItem(
@@ -207,6 +208,7 @@ function ThemeLoader() {
           href: document.getElementById("app-fonts")?.getAttribute("href") ?? null,
           main: data.headingScale.main,
           sub: data.headingScale.sub,
+          small: data.headingScale.small,
         }),
       );
     } catch {

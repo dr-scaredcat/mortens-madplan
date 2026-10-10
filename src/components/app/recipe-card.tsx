@@ -16,7 +16,8 @@ export function RecipeCard({ recipe, tags }: { recipe: RecipeListItem; tags: Map
   return (
     <Link to="/opskrifter/$id" params={{ id: recipe.id }} className="group block">
       <Card className="flex h-full flex-col overflow-hidden border-border/70 bg-card transition group-hover:border-primary/50">
-        <div className="aspect-[4/3] w-full bg-muted">
+        {/* Fast 4:3-felt, så høje billeder beskæres i stedet for at strække kortet */}
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-muted">
           <RecipeImage src={recipe.image_url} alt={recipe.title} />
         </div>
         <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:gap-2 sm:p-4">

@@ -136,7 +136,7 @@ function RecipePage() {
       </div>
 
       <Card className="overflow-hidden">
-        <div className="aspect-[16/9] w-full bg-muted">
+        <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
           <RecipeImage src={recipe.image_url} alt={recipe.title} />
         </div>
         <div className="space-y-3 p-4 sm:p-5">
@@ -240,7 +240,7 @@ function RecipePage() {
             {groupBySection(recipe.ingredients).map((g, gi) => (
               <div key={gi}>
                 {g.section && (
-                  <h3 className="mb-1 px-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  <h3 className="heading-sm mb-1 px-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     {g.section}
                   </h3>
                 )}
@@ -272,7 +272,7 @@ function RecipePage() {
               {recipe.steps.map((s, idx) => (
                 <li key={s.id} className="space-y-2">
                   {s.section && s.section !== recipe.steps[idx - 1]?.section && (
-                    <h3 className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    <h3 className="heading-sm pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                       {s.section}
                     </h3>
                   )}

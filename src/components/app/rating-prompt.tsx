@@ -117,7 +117,7 @@ export function RatingPrompt() {
           </DialogDescription>
         </DialogHeader>
         {current.recipe.image_url && (
-          <div className="aspect-[16/9] overflow-hidden rounded-md">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-md">
             <RecipeImage src={current.recipe.image_url} alt={current.recipe.title} />
           </div>
         )}

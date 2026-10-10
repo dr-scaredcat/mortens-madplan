@@ -53,10 +53,11 @@ export function fontHref(keys: (string | null | undefined)[]): string | null {
 }
 
 /** Sæt overskrifternes størrelse (procent) som CSS-variabler. */
-export function applyHeadingScale(main: number, sub: number) {
+export function applyHeadingScale(main: number, sub: number, small = 100) {
   const root = document.documentElement;
   root.style.setProperty("--heading-scale-main", String(main / 100));
   root.style.setProperty("--heading-scale-sub", String(sub / 100));
+  root.style.setProperty("--heading-scale-small", String(small / 100));
 }
 
 /**
