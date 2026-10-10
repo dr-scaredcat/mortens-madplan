@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { fetchMe, useMe } from "@/lib/queries";
 import { SiteHeader } from "@/components/app/site-header";
+import { RatingPrompt } from "@/components/app/rating-prompt";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -41,6 +42,7 @@ function AuthenticatedLayout() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
       <Outlet />
+      <RatingPrompt />
     </div>
   );
 }

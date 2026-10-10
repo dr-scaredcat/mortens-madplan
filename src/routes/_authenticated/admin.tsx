@@ -9,6 +9,7 @@ import { AdminAccess } from "@/components/app/admin-access";
 import { AdminIngredients } from "@/components/app/admin-ingredients";
 import { AdminCategories } from "@/components/app/admin-categories";
 import { AdminTags } from "@/components/app/admin-tags";
+import { AdminPlanner } from "@/components/app/admin-planner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — Astons Køkken" }] }),
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 const TABS = [
   { value: "general", label: "Generelt" },
+  { value: "planner", label: "Ugeplan" },
   { value: "themes", label: "Temaer" },
   { value: "access", label: "Adgang" },
   { value: "ingredients", label: "Ingredienser" },
@@ -56,6 +58,9 @@ function AdminPage() {
           </div>
           <TabsContent value="general">
             <AdminGeneral />
+          </TabsContent>
+          <TabsContent value="planner">
+            <AdminPlanner />
           </TabsContent>
           <TabsContent value="themes">
             <AdminThemes />

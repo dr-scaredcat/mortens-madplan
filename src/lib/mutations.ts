@@ -249,3 +249,36 @@ export async function updateIngredient(
 ) {
   unwrap(await supabase.from("ingredients").update(patch).eq("id", id));
 }
+
+// ─── Ugeplan ────────────────────────────────────────────────────────────────
+
+export type PlanDayRow = {
+  day: string;
+  kind: "recipe" | "rugbrod" | "ude" | "rester" | "fri";
+  recipe_id: string | null;
+  servings: number | null;
+  free_text: string | null;
+  locked: boolean;
+};
+
+/**
+ * Opret eller opdatér dage i ugeplanen (én række pr. dato). Rækkerne sendes
+ * altid komplette, så en upsert aldrig nulstiller felter ved et uheld.
+ */
+export async function upsertPlanDays(rows: PlanDayRow[]) {
+  if (!rows.length) return;
+  unwrap(await supabase.from("plan_days").upsert(rows, { onConflict: "day" }));
+}
+
+/** Registrér passerede dage i ugeplanen som spist. */
+export async function syncMealLog() {
+  unwrap(await supabase.rpc("sync_meal_log"));
+}
+
+export async function dismissRatingPrompt(mealLogId: string) {
+  unwrap(
+    await supabase
+      .from("rating_prompt_dismissals")
+      .upsert({ meal_log_id: mealLogId }, { onConflict: "meal_log_id,user_id" }),
+  );
+}
