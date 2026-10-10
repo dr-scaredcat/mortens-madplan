@@ -23,9 +23,11 @@ export const Route = createFileRoute("/site.webmanifest")({
           background_color: "#f5f5ee",
           theme_color: "#f5f5ee",
           icons: [
-            { src: "/web-app-manifest-192x192.png?v=2", sizes: "192x192", type: "image/png", purpose: "any" },
-            { src: "/web-app-manifest-512x512.png?v=2", sizes: "512x512", type: "image/png", purpose: "any" },
-            { src: "/web-app-manifest-maskable-512x512.png?v=2", sizes: "512x512", type: "image/png", purpose: "maskable" },
+            { src: "/web-app-manifest-192x192.png?v=3", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "/web-app-manifest-512x512.png?v=3", sizes: "512x512", type: "image/png", purpose: "any" },
+            // Fuldflade-ikoner hvor hunden fylder Android-cirklen (som i Astons Bar)
+            { src: "/web-app-manifest-maskable-192x192.png?v=3", sizes: "192x192", type: "image/png", purpose: "maskable" },
+            { src: "/web-app-manifest-maskable-512x512.png?v=3", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         };
         return new Response(JSON.stringify(manifest, null, 2), {
