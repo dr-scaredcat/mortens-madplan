@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase, unwrap } from "@/lib/supabase";
 import { DEFAULT_THEMES, type Theme } from "@/lib/themes";
+import { isFontKey, type FontKey } from "@/lib/fonts";
 import {
   DEFAULT_PLANNER,
   type Ingredient,
@@ -31,6 +32,8 @@ export type AppSettings = {
   activeThemeId: string;
   planner: PlannerSettings;
   weekTemplate: WeekTemplate;
+  headingFont: FontKey;
+  titleFont: FontKey;
 };
 
 export async function fetchSettings(): Promise<AppSettings> {
@@ -52,6 +55,8 @@ export async function fetchSettings(): Promise<AppSettings> {
     activeThemeId: typeof active === "string" ? active : "built-in-light",
     planner: { ...DEFAULT_PLANNER, ...planner },
     weekTemplate: template,
+    headingFont: isFontKey(get("heading_font")) ? (get("heading_font") as FontKey) : "default",
+    titleFont: isFontKey(get("title_font")) ? (get("title_font") as FontKey) : "default",
   };
 }
 

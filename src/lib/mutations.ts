@@ -18,8 +18,9 @@ export type RecipeDraft = {
     amount: number | null;
     unit: string | null;
     note: string | null;
+    section?: string | null;
   }[];
-  steps: { text: string; timer_minutes: number | null }[];
+  steps: { text: string; timer_minutes: number | null; section?: string | null }[];
 };
 
 /** Opret eller opdatér en opskrift inkl. ingredienser, trin og tags. */
@@ -57,6 +58,7 @@ export async function saveRecipe(draft: RecipeDraft, id?: string): Promise<strin
           amount: i.amount,
           unit: i.unit?.trim() || null,
           note: i.note?.trim() || null,
+          section: i.section?.trim() || null,
           sort_order: idx,
         })),
       ),
@@ -70,6 +72,7 @@ export async function saveRecipe(draft: RecipeDraft, id?: string): Promise<strin
           recipe_id: recipeId,
           text: s.text.trim(),
           timer_minutes: s.timer_minutes,
+          section: s.section?.trim() || null,
           sort_order: idx,
         })),
       ),

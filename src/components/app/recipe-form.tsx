@@ -4,6 +4,7 @@ import {
   ArrowDown,
   ArrowUp,
   ClipboardPaste,
+  Heading,
   ImagePlus,
   Loader2,
   Plus,
@@ -50,9 +51,29 @@ type IngRow = {
   note: string;
   /** Oprindelig tekst/navn fra import — vises når ingrediensen mangler at blive valgt */
   hint?: string;
+  /** Overskrift-række (fx "Sauce"); teksten ligger i `note` */
+  heading?: boolean;
 };
 
-type StepRow = { key: string; text: string; timer: string };
+/** Trin; for overskrift-rækker ligger overskriften i `text` */
+type StepRow = { key: string; text: string; timer: string; heading?: boolean };
+
+/** Indsæt overskrift-rækker hvor afsnittet skifter. */
+function withHeadings<T extends { section: string | null }, R>(
+  items: T[],
+  heading: (section: string) => R,
+  row: (item: T) => R,
+): R[] {
+  const out: R[] = [];
+  let current: string | null = null;
+  for (const it of items) {
+    const sec = it.section?.trim() || null;
+    if (sec && sec !== current) out.push(heading(sec));
+    current = sec;
+    out.push(row(it));
+  }
+  return out;
+}
 
 export type RecipeFormInitial = {
   title: string;
@@ -91,18 +112,26 @@ export function initialFromRecipe(r: RecipeDetail): RecipeFormInitial {
     image_url: r.image_url,
     source_url: r.source_url ?? "",
     tag_ids: r.tag_ids,
-    ingredients: r.ingredients.map((i) => ({
-      key: key(),
-      ingredient_id: i.ingredient_id,
-      amount: amountToInput(i.amount),
-      unit: i.unit ?? "",
-      note: i.note ?? "",
-    })),
-    steps: r.steps.map((s) => ({
-      key: key(),
-      text: s.text,
-      timer: s.timer_minutes ? String(s.timer_minutes) : "",
-    })),
+    ingredients: withHeadings<(typeof r.ingredients)[number], IngRow>(
+      r.ingredients,
+      (sec) => ({ key: key(), ingredient_id: null, amount: "", unit: "", note: sec, heading: true }),
+      (i) => ({
+        key: key(),
+        ingredient_id: i.ingredient_id,
+        amount: amountToInput(i.amount),
+        unit: i.unit ?? "",
+        note: i.note ?? "",
+      }),
+    ),
+    steps: withHeadings<(typeof r.steps)[number], StepRow>(
+      r.steps,
+      (sec) => ({ key: key(), text: sec, timer: "", heading: true }),
+      (s) => ({
+        key: key(),
+        text: s.text,
+        timer: s.timer_minutes ? String(s.timer_minutes) : "",
+      }),
+    ),
   };
 }
 
@@ -110,7 +139,10 @@ export function initialFromRecipe(r: RecipeDetail): RecipeFormInitial {
 export function rowsFromParsed(lines: ParsedIngredientLine[], catalog: Ingredient[]): IngRow[] {
   return lines
     .filter((l) => l.name)
-    .map((l) => {
+    .map((l): IngRow => {
+      // Linjer som "SAUCE:" eller "**Topping**" bliver til overskrifter
+      const head = headingText(l.raw);
+      if (head) return { key: key(), ingredient_id: null, amount: "", unit: "", note: head, heading: true };
       const match = matchIngredient(l.name, catalog);
       return {
         key: key(),
@@ -123,8 +155,25 @@ export function rowsFromParsed(lines: ParsedIngredientLine[], catalog: Ingredien
     });
 }
 
+/** Genkend en overskrift-linje: "SAUCE:", "**Topping**", "_Hurtig_" … */
+export function headingText(raw: string): string | null {
+  const t = raw.trim();
+  const md = t.match(/^(\*{1,2}|_{1,2})([^*_]+)\1:?$/);
+  if (md) return tidyHeading(md[2]);
+  if (/^[^\d][^:]{0,40}:$/.test(t)) return tidyHeading(t.slice(0, -1));
+  return null;
+}
+
+function tidyHeading(s: string): string {
+  const v = s.trim();
+  // "RAGÙ" → "Ragù"
+  return v === v.toUpperCase() ? v.charAt(0) + v.slice(1).toLowerCase() : v;
+}
+
 export function stepsFromTexts(texts: string[]): StepRow[] {
   return texts.map((t) => {
+    const head = headingText(t);
+    if (head) return { key: key(), text: head, timer: "", heading: true };
     // Find en tid i trinet ("bag i 25 minutter") som forslag til timer
     const m = t.match(/(\d+)\s*(?:-\s*\d+\s*)?(?:min\b|minutter|minut)/i);
     return { key: key(), text: t, timer: m ? m[1] : "" };
@@ -171,6 +220,11 @@ export function RecipeForm({
   const removeIng = (k: string) => setIngs((rows) => rows.filter((r) => r.key !== k));
   const addIng = () =>
     setIngs((rows) => [...rows, { key: key(), ingredient_id: null, amount: "", unit: "", note: "" }]);
+  const addIngHeading = () =>
+    setIngs((rows) => [
+      ...rows,
+      { key: key(), ingredient_id: null, amount: "", unit: "", note: "", heading: true },
+    ]);
 
   // ─ Trin
   const updateStep = (k: string, patch: Partial<StepRow>) =>
@@ -179,6 +233,15 @@ export function RecipeForm({
     setSteps((rows) => move(rows, rows.findIndex((r) => r.key === k), dir));
   const removeStep = (k: string) => setSteps((rows) => rows.filter((r) => r.key !== k));
   const addStep = () => setSteps((rows) => [...rows, { key: key(), text: "", timer: "" }]);
+  const addStepHeading = () =>
+    setSteps((rows) => [...rows, { key: key(), text: "", timer: "", heading: true }]);
+
+  // Trinnumre springer overskrifter over
+  const stepNumbers = new Map<string, number>();
+  {
+    let n = 0;
+    for (const st of steps) if (!st.heading) stepNumbers.set(st.key, ++n);
+  }
 
   async function onPickImage(file: File | undefined) {
     if (!file) return;
@@ -205,7 +268,9 @@ export function RecipeForm({
       return toast.error("Tilberedningstid skal være et antal minutter.");
     }
 
-    const filled = ings.filter((r) => r.ingredient_id || r.amount || r.note || r.hint);
+    const filled = ings.filter(
+      (r) => !r.heading && (r.ingredient_id || r.amount || r.note || r.hint),
+    );
     const missing = filled.filter((r) => !r.ingredient_id);
     if (missing.length) {
       return toast.error(
@@ -226,15 +291,19 @@ export function RecipeForm({
       image_url: imageUrl,
       source_url: sourceUrl,
       tag_ids: tagIds,
-      ingredients: filled.map((r) => ({
-        ingredient_id: r.ingredient_id!,
-        amount: r.amount.trim() ? parseAmount(r.amount) : null,
-        unit: r.unit || null,
-        note: r.note || null,
-      })),
-      steps: steps.map((st) => ({
+      ingredients: sectioned(ings)
+        .filter(({ row }) => filled.includes(row))
+        .map(({ row: r, section }) => ({
+          ingredient_id: r.ingredient_id!,
+          amount: r.amount.trim() ? parseAmount(r.amount) : null,
+          unit: r.unit || null,
+          note: r.note || null,
+          section,
+        })),
+      steps: sectioned(steps).map(({ row: st, section }) => ({
         text: st.text,
         timer_minutes: st.timer.trim() ? Math.max(1, Math.round(Number(st.timer))) || null : null,
+        section,
       })),
     };
 
@@ -378,7 +447,25 @@ export function RecipeForm({
           </Button>
         </div>
         <ul className="space-y-3">
-          {ings.map((r, idx) => (
+          {ings.map((r, idx) =>
+            r.heading ? (
+              <li key={r.key} className="flex items-center gap-1.5 pt-2">
+                <Input
+                  aria-label="Overskrift"
+                  className="font-semibold"
+                  placeholder="Overskrift, fx Sauce"
+                  value={r.note}
+                  onChange={(e) => updateIng(r.key, { note: e.target.value })}
+                />
+                <RowButtons
+                  first={idx === 0}
+                  last={idx === ings.length - 1}
+                  onUp={() => moveIng(r.key, -1)}
+                  onDown={() => moveIng(r.key, 1)}
+                  onRemove={() => removeIng(r.key)}
+                />
+              </li>
+            ) : (
             <li key={r.key} className="space-y-2 rounded-lg border border-border/70 p-2.5">
               <div className="flex items-center gap-1.5">
                 <IngredientPicker
@@ -423,29 +510,54 @@ export function RecipeForm({
                 </p>
               )}
             </li>
-          ))}
+            ),
+          )}
         </ul>
-        <Button type="button" variant="outline" size="sm" onClick={addIng}>
-          <Plus className="mr-1 h-4 w-4" />
-          Tilføj ingrediens
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={addIng}>
+            <Plus className="mr-1 h-4 w-4" />
+            Tilføj ingrediens
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={addIngHeading}>
+            <Heading className="mr-1 h-4 w-4" />
+            Tilføj overskrift
+          </Button>
+        </div>
       </Card>
 
       {/* Fremgangsmåde */}
       <Card className="space-y-3 p-4">
         <h2 className="font-serif text-xl">Fremgangsmåde</h2>
         <ol className="space-y-3">
-          {steps.map((s, idx) => (
+          {steps.map((s, idx) =>
+            s.heading ? (
+              <li key={s.key} className="flex items-center gap-1.5 pt-2">
+                <Input
+                  aria-label="Overskrift"
+                  className="font-semibold"
+                  placeholder="Overskrift, fx Sauce"
+                  value={s.text}
+                  onChange={(e) => updateStep(s.key, { text: e.target.value })}
+                />
+                <RowButtons
+                  first={idx === 0}
+                  last={idx === steps.length - 1}
+                  onUp={() => moveStep(s.key, -1)}
+                  onDown={() => moveStep(s.key, 1)}
+                  onRemove={() => removeStep(s.key)}
+                />
+              </li>
+            ) : (
             <li key={s.key} className="flex gap-2">
               <span className="mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                {idx + 1}
+                {stepNumbers.get(s.key)}
               </span>
               <div className="flex-1 space-y-1.5">
                 <Textarea
                   rows={2}
                   value={s.text}
                   onChange={(e) => updateStep(s.key, { text: e.target.value })}
-                  placeholder={`Trin ${idx + 1}`}
+                  placeholder={`Trin ${stepNumbers.get(s.key)}`}
                 />
                 <div className="flex items-center gap-2">
                   <Timer className="h-4 w-4 text-muted-foreground" />
@@ -472,12 +584,19 @@ export function RecipeForm({
                 </div>
               </div>
             </li>
-          ))}
+            ),
+          )}
         </ol>
-        <Button type="button" variant="outline" size="sm" onClick={addStep}>
-          <Plus className="mr-1 h-4 w-4" />
-          Tilføj trin
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={addStep}>
+            <Plus className="mr-1 h-4 w-4" />
+            Tilføj trin
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={addStepHeading}>
+            <Heading className="mr-1 h-4 w-4" />
+            Tilføj overskrift
+          </Button>
+        </div>
       </Card>
 
       <div className="sticky bottom-0 z-20 -mx-4 flex flex-wrap items-center gap-2 border-t border-border bg-background/95 px-4 py-3 pb-safe backdrop-blur">
@@ -498,13 +617,29 @@ export function RecipeForm({
         onAdd={(lines) => {
           const rows = rowsFromParsed(lines, catalog);
           setIngs((cur) => [
-            ...cur.filter((r) => r.ingredient_id || r.amount || r.note || r.hint),
+            ...cur.filter((r) => r.heading || r.ingredient_id || r.amount || r.note || r.hint),
             ...rows,
           ]);
         }}
       />
     </form>
   );
+}
+
+/** Knyt hver almindelig række til den seneste overskrift over den. */
+function sectioned<T extends { heading?: boolean; note?: string; text?: string }>(
+  rows: T[],
+): { row: T; section: string | null }[] {
+  const out: { row: T; section: string | null }[] = [];
+  let section: string | null = null;
+  for (const r of rows) {
+    if (r.heading) {
+      section = ((r.note ?? r.text) || "").trim() || null;
+      continue;
+    }
+    out.push({ row: r, section });
+  }
+  return out;
 }
 
 function move<T>(arr: T[], idx: number, dir: -1 | 1): T[] {
@@ -580,7 +715,7 @@ function PasteIngredientsDialog({
           <DialogTitle>Indsæt ingrediensliste</DialogTitle>
           <DialogDescription>
             Én ingrediens pr. linje, fx “2 spsk olivenolie” eller “500 g hakket oksekød”. Mængde og
-            enhed findes automatisk.
+            enhed findes automatisk, og linjer som “Sauce:” bliver til overskrifter.
           </DialogDescription>
         </DialogHeader>
         <Textarea rows={10} value={text} onChange={(e) => setText(e.target.value)} />

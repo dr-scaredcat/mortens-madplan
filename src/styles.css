@@ -19,6 +19,8 @@
  */
 
 @theme inline {
+  /* Overskrifter og .font-serif følger den valgte overskrift-skrifttype */
+  --font-serif: var(--font-heading);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,6 +65,9 @@
 
 :root {
   --radius: 0.625rem;
+  /* Skrifttyper — overskrives fra Admin → Temaer (src/lib/fonts.ts) */
+  --font-heading: "Fraunces", ui-serif, Georgia, serif;
+  --font-title: var(--font-heading);
   /* Standardtema "Lys" — varm creme med tomatrød og krydderurte-grøn.
      Overskrives af det aktive tema fra databasen (se src/lib/themes.ts). */
   --background: oklch(0.975 0.015 85);
@@ -145,9 +150,12 @@
     font-family: "Inter", system-ui, sans-serif;
   }
 
-  .font-serif,
   h1, h2, h3 {
-    font-family: "Fraunces", ui-serif, Georgia, serif;
+    font-family: var(--font-heading);
+  }
+
+  .font-title {
+    font-family: var(--font-title);
   }
 }
 

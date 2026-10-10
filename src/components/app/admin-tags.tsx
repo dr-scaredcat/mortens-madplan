@@ -73,7 +73,8 @@ export function AdminTags() {
         <p className="text-sm text-muted-foreground">
           Tags bruges til søgning og ugeplan. Tags i en gruppe markeret som{" "}
           <em>hovedingrediens</em> bruges til at variere ugen, og tags markeret som{" "}
-          <em>weekendmad</em> foretrækkes fredag og lørdag.
+          <em>weekendmad</em> foretrækkes fredag og lørdag. Opskrifter med et tag markeret{" "}
+          <em>aldrig i ugeplan</em> foreslås aldrig automatisk, men kan stadig vælges manuelt.
         </p>
       </div>
 
@@ -159,6 +160,13 @@ export function AdminTags() {
                       onCheckedChange={(v) => updateTag(t, { is_weekend: v })}
                     />
                     Weekendmad
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Switch
+                      checked={t.exclude_from_planner}
+                      onCheckedChange={(v) => updateTag(t, { exclude_from_planner: v })}
+                    />
+                    Aldrig i ugeplan
                   </label>
                   <Button
                     size="icon"
