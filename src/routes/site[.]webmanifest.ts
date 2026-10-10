@@ -20,12 +20,12 @@ export const Route = createFileRoute("/site.webmanifest")({
           start_url: "/",
           scope: "/",
           display: "standalone",
-          background_color: "#faf6ef",
-          theme_color: "#faf6ef",
+          background_color: "#f5f5ee",
+          theme_color: "#f5f5ee",
           icons: [
-            { src: "/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-            { src: "/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-            { src: "/web-app-manifest-maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+            { src: "/web-app-manifest-192x192.png?v=2", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "/web-app-manifest-512x512.png?v=2", sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: "/web-app-manifest-maskable-512x512.png?v=2", sizes: "512x512", type: "image/png", purpose: "maskable" },
           ],
         };
         return new Response(JSON.stringify(manifest, null, 2), {
