@@ -2,9 +2,9 @@ import { Link, useNavigate, type LinkProps } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useMe, useSettings, DEFAULT_APP_NAME } from "@/lib/queries";
+import { useMe, useSettings, DEFAULT_APP_NAME, DEFAULT_HEADER } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
-import { AppLogo } from "@/components/app/app-logo";
+import { SiteBrand } from "@/components/app/site-brand";
 
 type NavItem = { to: NonNullable<LinkProps["to"]>; label: string; adminOnly?: boolean };
 
@@ -38,9 +38,8 @@ export function SiteHeader({ showNav = true }: { showNav?: boolean }) {
       {/* Logo-række — scroller væk naturligt */}
       <div className="border-b border-border bg-background pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-          <Link to="/" className="flex items-center gap-2.5 font-serif tracking-tight">
-            <AppLogo className="h-9 w-9 text-primary" />
-            <span className="font-title text-2xl leading-none">{appName}</span>
+          <Link to="/" className="flex items-center tracking-tight">
+            <SiteBrand name={appName} header={settings?.header ?? DEFAULT_HEADER} />
           </Link>
         </div>
       </div>

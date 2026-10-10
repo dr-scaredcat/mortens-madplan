@@ -34,10 +34,10 @@ export function TagChips({
   return (
     <div className="space-y-2">
       {sections.map((s) => (
-        <div key={s.id} className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 w-full text-xs font-medium text-muted-foreground sm:w-28">
-            {s.name}
-          </span>
+        <div key={s.id} className="grid gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-start">
+          <span className="text-xs font-medium text-muted-foreground sm:pt-1">{s.name}</span>
+          {/* Taggene ombrydes i deres egen kolonne, så en ny linje starter under det første tag */}
+          <div className="flex flex-wrap gap-1.5">
           {s.tags.map((t) => {
             const active = selected.includes(t.id);
             const count = counts?.get(t.id);
@@ -57,6 +57,7 @@ export function TagChips({
               </button>
             );
           })}
+          </div>
         </div>
       ))}
       {onClear && selected.length > 0 && (
