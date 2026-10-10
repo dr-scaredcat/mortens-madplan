@@ -145,8 +145,10 @@ export type PlannerSettings = {
   excludeDays: number;
   /** Maks. antal dage med samme hovedingrediens pr. uge. */
   maxMainPerWeek: number;
-  /** Standard antal personer i ugeplanen. */
+  /** Standard antal personer for nye opskrifter. */
   defaultServings: number;
+  /** Standard antal personer, retterne skaleres til i ugeplanen. */
+  planServings: number;
   /** Antal seneste vurderinger der indgår i en rets score i planlæggeren. */
   recentRatings: number;
 };
@@ -156,6 +158,7 @@ export const DEFAULT_PLANNER: PlannerSettings = {
   excludeDays: 14,
   maxMainPerWeek: 2,
   defaultServings: 4,
+  planServings: 2,
   recentRatings: 6,
 };
 

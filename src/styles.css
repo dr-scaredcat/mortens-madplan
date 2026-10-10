@@ -154,6 +154,14 @@
     font-family: var(--font-heading);
   }
 
+  /* Størrelse på overskrifter — justeres under Admin → Temaer */
+  h1 {
+    zoom: var(--heading-scale-main, 1);
+  }
+  h2, h3 {
+    zoom: var(--heading-scale-sub, 1);
+  }
+
   .font-title {
     font-family: var(--font-title);
   }

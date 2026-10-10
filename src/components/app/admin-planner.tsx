@@ -41,11 +41,18 @@ const FIELDS: { key: keyof PlannerSettings; label: string; help: string; min: nu
     max: 7,
   },
   {
-    key: "defaultServings",
-    label: "Standard antal personer",
-    help: "Bruges i ugeplanen og for nye opskrifter.",
+    key: "planServings",
+    label: "Antal personer i ugeplanen",
+    help: "Retterne i ugeplanen skaleres som standard til dette antal (kan ændres pr. dag).",
     min: 1,
     max: 20,
+  },
+  {
+    key: "defaultServings",
+    label: "Antal personer for nye opskrifter",
+    help: "Forudfyldt, når en ny opskrift oprettes.",
+    min: 1,
+    max: 50,
   },
 ];
 

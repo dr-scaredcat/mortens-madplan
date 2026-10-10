@@ -52,6 +52,13 @@ export function fontHref(keys: (string | null | undefined)[]): string | null {
   return `https://fonts.googleapis.com/css2?${families.map((f) => `family=${f}`).join("&")}&display=swap`;
 }
 
+/** Sæt overskrifternes størrelse (procent) som CSS-variabler. */
+export function applyHeadingScale(main: number, sub: number) {
+  const root = document.documentElement;
+  root.style.setProperty("--heading-scale-main", String(main / 100));
+  root.style.setProperty("--heading-scale-sub", String(sub / 100));
+}
+
 /**
  * Anvend skrifttyperne: indlæs dem fra Google Fonts og sæt CSS-variablerne
  * --font-heading (overskrifter) og --font-title (titlen i toppen).
