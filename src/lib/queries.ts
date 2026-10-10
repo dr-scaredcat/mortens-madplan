@@ -35,7 +35,42 @@ export type AppSettings = {
   weekTemplate: WeekTemplate;
   headingFont: FontKey;
   titleFont: FontKey;
+  header: HeaderSettings;
 };
+
+/** Logo og titel i toppen af siden (Admin → Generelt). */
+export type HeaderSettings = {
+  /** "custom" = public/custom-logo.png, "pot" = den indbyggede gryde */
+  logoType: "custom" | "pot";
+  logoSize: number;
+  textSize: number;
+  gap: number;
+  logoOffsetY: number;
+  textOffsetY: number;
+};
+
+export const DEFAULT_HEADER: HeaderSettings = {
+  logoType: "custom",
+  logoSize: 40,
+  textSize: 24,
+  gap: 10,
+  logoOffsetY: 0,
+  textOffsetY: 0,
+};
+
+function parseHeader(v: unknown): HeaderSettings {
+  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const n = (k: keyof HeaderSettings) =>
+    typeof o[k] === "number" && Number.isFinite(o[k]) ? (o[k] as number) : (DEFAULT_HEADER[k] as number);
+  return {
+    logoType: o.logoType === "pot" ? "pot" : "custom",
+    logoSize: n("logoSize"),
+    textSize: n("textSize"),
+    gap: n("gap"),
+    logoOffsetY: n("logoOffsetY"),
+    textOffsetY: n("textOffsetY"),
+  };
+}
 
 export async function fetchSettings(): Promise<AppSettings> {
   const rows = unwrap(await supabase.from("settings").select("key, value")) as {
@@ -58,6 +93,7 @@ export async function fetchSettings(): Promise<AppSettings> {
     weekTemplate: template,
     headingFont: isFontKey(get("heading_font")) ? (get("heading_font") as FontKey) : "default",
     titleFont: isFontKey(get("title_font")) ? (get("title_font") as FontKey) : "default",
+    header: parseHeader(get("header")),
   };
 }
 
