@@ -26,6 +26,8 @@ Fase 2 (indkøbsliste og varelager) og fase 3 (ugeplan) følger. Databasen er al
    npm run deploy
    ```
 
+   Kør
+
 ## Adgang
 
 Brugerne er de samme konti som i Fællesrejser. En admin giver adgang under **Admin → Adgang**.
