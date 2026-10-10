@@ -10,6 +10,7 @@ type NavItem = { to: NonNullable<LinkProps["to"]>; label: string; adminOnly?: bo
 
 // Rækkefølgen her er rækkefølgen i menuen.
 export const NAV_ITEMS: NavItem[] = [
+  { to: "/ugeplan", label: "Ugeplan" },
   { to: "/opskrifter", label: "Opskrifter" },
   { to: "/indkoebsliste", label: "Indkøbsliste" },
   { to: "/varelager", label: "Varelager" },

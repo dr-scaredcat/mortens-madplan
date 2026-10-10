@@ -12,7 +12,7 @@ Husstandens app til opskrifter, indkøbsliste, varelager og ugeplan — bygget i
 
 **Fase 2 (færdig):** indkøbsliste med kategorier og live-opdatering mellem telefoner, tilføjelse fra opskrifter, fritekst-varer og varelager med "løbet tør".
 
-Fase 3 (ugeplan) følger.
+**Fase 3 (færdig):** ugeplan med forslag ud fra score, tid siden sidst, weekendmad og variation i hovedingrediens; låste dage, nyt forslag og vælg selv; standarduge; hele ugen på indkøbslisten; automatisk "spist"-registrering og "Hvordan var den?"-forespørgsler.
 
 ## Opsætning
 

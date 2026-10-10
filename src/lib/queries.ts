@@ -6,6 +6,7 @@ import {
   type Ingredient,
   type MealLog,
   type MemberName,
+  type PlanDay,
   type PlannerSettings,
   type Rating,
   type Recipe,
@@ -227,4 +228,59 @@ export function useShoppingItems() {
       ) as ShoppingItem[],
     staleTime: 10_000,
   });
+}
+
+// ─── Ugeplan ────────────────────────────────────────────────────────────────
+
+export function usePlanDays(from: string, to: string) {
+  return useQuery({
+    queryKey: ["plan-days", from, to],
+    queryFn: async () =>
+      unwrap(
+        await supabase
+          .from("plan_days")
+          .select("*")
+          .gte("day", from)
+          .lte("day", to)
+          .order("day"),
+      ) as PlanDay[],
+  });
+}
+
+// ─── "Hvordan var retten?" ──────────────────────────────────────────────────
+
+export type RatingPrompt = { meal: MealLog; recipe: Pick<Recipe, "id" | "title" | "image_url"> };
+
+/**
+ * Måltider fra de seneste 7 dage, som jeg ikke har vurderet eller sprunget
+ * over. Ældste først.
+ */
+export async function fetchRatingPrompts(userId: string): Promise<RatingPrompt[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+  const sinceISO = since.toISOString().slice(0, 10);
+
+  const meals = unwrap(
+    await supabase
+      .from("meal_log")
+      .select("*, recipe:recipes(id, title, image_url), ratings(user_id), rating_prompt_dismissals(user_id)")
+      .gte("eaten_on", sinceISO)
+      .order("eaten_on"),
+  ) as (MealLog & {
+    recipe: Pick<Recipe, "id" | "title" | "image_url"> | null;
+    ratings: { user_id: string }[];
+    rating_prompt_dismissals: { user_id: string }[];
+  })[];
+
+  return meals
+    .filter(
+      (m) =>
+        m.recipe &&
+        !m.ratings.some((r) => r.user_id === userId) &&
+        !m.rating_prompt_dismissals.some((d) => d.user_id === userId),
+    )
+    .map(({ ratings: _r, rating_prompt_dismissals: _d, recipe, ...meal }) => ({
+      meal,
+      recipe: recipe!,
+    }));
 }
