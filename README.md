@@ -8,9 +8,11 @@ Husstandens app til opskrifter, indkøbsliste, varelager og ugeplan — bygget i
 
 ## Status
 
-**Fase 1 (i gang):** login og adgang, temaer, app-navn, opskrifter med tags, søgning, billeder, skalering, score og noter, import fra link, "hold skærmen tændt" og madlavningstilstand.
+**Fase 1 (færdig):** login og adgang, temaer, app-navn, opskrifter med tags, søgning, billeder, skalering, score og noter, import fra link, "hold skærmen tændt" og madlavningstilstand.
 
-Fase 2 (indkøbsliste og varelager) og fase 3 (ugeplan) følger. Databasen er allerede forberedt til dem.
+**Fase 2 (færdig):** indkøbsliste med kategorier og live-opdatering mellem telefoner, tilføjelse fra opskrifter, fritekst-varer og varelager med "løbet tør".
+
+Fase 3 (ugeplan) følger.
 
 ## Opsætning
 

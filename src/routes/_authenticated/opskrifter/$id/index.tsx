@@ -10,6 +10,7 @@ import {
   Minus,
   Pencil,
   Plus,
+  ShoppingCart,
   Star,
   Sun,
   Timer,
@@ -27,6 +28,7 @@ import { StarsDisplay } from "@/components/app/rating-stars";
 import { RecipeImage } from "@/components/app/recipe-image";
 import { RateDialog } from "@/components/app/rate-dialog";
 import { CookMode } from "@/components/app/cook-mode";
+import { AddToShoppingDialog } from "@/components/app/add-to-shopping-dialog";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useMe, useMemberNames, useRecipe, useTags } from "@/lib/queries";
 import { deleteMeal, deleteRating, logMeal } from "@/lib/mutations";
@@ -58,6 +60,7 @@ function RecipePage() {
   const [rateOpen, setRateOpen] = useState(false);
   const [editingRating, setEditingRating] = useState<Rating | null>(null);
   const [cooking, setCooking] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
   const [addDate, setAddDate] = useState(todayISO());
 
   const names = useMemo(() => new Map(members.map((m) => [m.user_id, m.name])), [members]);
@@ -181,6 +184,10 @@ function RecipePage() {
         <Button onClick={() => setCooking(true)}>
           <ChefHat className="mr-1 h-4 w-4" />
           Madlavningstilstand
+        </Button>
+        <Button variant="outline" className="bg-card" onClick={() => setShopOpen(true)}>
+          <ShoppingCart className="mr-1 h-4 w-4" />
+          Til indkøbslisten
         </Button>
         <Button
           variant="outline"
@@ -407,6 +414,20 @@ function RecipePage() {
         meals={recipe.meals}
         myRatings={myRatings}
         editing={editingRating}
+      />
+
+      <AddToShoppingDialog
+        open={shopOpen}
+        onOpenChange={setShopOpen}
+        title={`${recipe.title} · ${people} pers.`}
+        sources={[
+          {
+            title: recipe.title,
+            recipeServings: recipe.servings,
+            servings: people,
+            ingredients: recipe.ingredients,
+          },
+        ]}
       />
 
       {cooking && <CookMode recipe={recipe} servings={people} onClose={() => setCooking(false)} />}

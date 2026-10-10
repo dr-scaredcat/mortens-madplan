@@ -14,6 +14,7 @@ import {
   type RecipeListItem,
   type RecipeStep,
   type ShopCategory,
+  type ShoppingItem,
   type Tag,
   type TagGroup,
   type WeekTemplate,
@@ -213,4 +214,17 @@ export async function fetchRecipe(id: string): Promise<RecipeDetail | null> {
 
 export function useRecipe(id: string) {
   return useQuery({ queryKey: ["recipe", id], queryFn: () => fetchRecipe(id) });
+}
+
+// ─── Indkøbsliste ───────────────────────────────────────────────────────────
+
+export function useShoppingItems() {
+  return useQuery({
+    queryKey: ["shopping"],
+    queryFn: async () =>
+      unwrap(
+        await supabase.from("shopping_items").select("*").order("created_at"),
+      ) as ShoppingItem[],
+    staleTime: 10_000,
+  });
 }
