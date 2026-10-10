@@ -183,3 +183,69 @@ export async function saveRating(input: {
 export async function deleteRating(id: string) {
   unwrap(await supabase.from("ratings").delete().eq("id", id));
 }
+
+// ─── Indkøbsliste og varelager ─────────────────────────────────────────────
+
+export type ShoppingInput = {
+  ingredient_id?: string | null;
+  name?: string;
+  amount?: number | null;
+  unit?: string | null;
+  category_id?: string | null;
+  source?: string | null;
+};
+
+/**
+ * Læg varer på indkøbslisten. Databasen lægger ens varer (samme ingrediens og
+ * enhed) sammen og matcher fritekst mod ingredienskataloget.
+ */
+export async function addShoppingItems(items: ShoppingInput[]): Promise<number> {
+  if (!items.length) return 0;
+  return unwrap(await supabase.rpc("add_shopping_items", { items })) as number;
+}
+
+export async function setShoppingChecked(id: string, checked: boolean) {
+  unwrap(await supabase.from("shopping_items").update({ checked }).eq("id", id));
+}
+
+export async function updateShoppingItem(
+  id: string,
+  patch: Partial<{
+    name: string;
+    amount: number | null;
+    unit: string | null;
+    category_id: string | null;
+    ingredient_id: string | null;
+  }>,
+) {
+  unwrap(await supabase.from("shopping_items").update(patch).eq("id", id));
+}
+
+export async function deleteShoppingItem(id: string) {
+  unwrap(await supabase.from("shopping_items").delete().eq("id", id));
+}
+
+export async function clearCheckedShopping() {
+  unwrap(await supabase.from("shopping_items").delete().eq("checked", true));
+}
+
+export async function clearAllShopping() {
+  unwrap(
+    await supabase
+      .from("shopping_items")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000"),
+  );
+}
+
+/** "Løbet tør": markér basisvaren og læg den på indkøbslisten. */
+export async function markOutOfStock(ingredientId: string) {
+  unwrap(await supabase.rpc("mark_out_of_stock", { p_ingredient_id: ingredientId }));
+}
+
+export async function updateIngredient(
+  id: string,
+  patch: Partial<Pick<Ingredient, "name" | "category_id" | "default_unit" | "is_staple" | "in_stock">>,
+) {
+  unwrap(await supabase.from("ingredients").update(patch).eq("id", id));
+}
