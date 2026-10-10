@@ -1,0 +1,290 @@
+-- ════════════════════════════════════════════════════════════════════════════
+-- Astons Køkken — startdata
+-- Kategorier, ingredienskatalog, tags, indstillinger og første administrator.
+-- Alt kan ændres bagefter i appens admin-side.
+-- ════════════════════════════════════════════════════════════════════════════
+
+-- ─── Første administrator ──────────────────────────────────────────────────
+insert into madplan.members (user_id, is_admin)
+select id, true from auth.users where lower(email) = 'mortenrose@protonmail.com'
+on conflict (user_id) do update set is_admin = true;
+
+-- ─── Indstillinger ─────────────────────────────────────────────────────────
+insert into madplan.settings (key, value) values
+  ('app_name', '"Astons Køkken"'),
+  ('active_theme', '"built-in-light"'),
+  ('themes', '[
+    {"id":"built-in-light","name":"Lys","isBuiltIn":true,"colors":{
+      "background":"oklch(0.975 0.015 85)","card":"oklch(0.995 0.008 85)",
+      "foreground":"oklch(0.25 0.03 40)","primary":"oklch(0.62 0.17 35)",
+      "primaryForeground":"oklch(0.99 0.01 85)","muted":"oklch(0.94 0.02 85)",
+      "mutedForeground":"oklch(0.48 0.04 50)","accent":"oklch(0.82 0.1 135)",
+      "accentForeground":"oklch(0.25 0.05 140)","border":"oklch(0.88 0.03 60)",
+      "destructive":"oklch(0.58 0.22 25)","destructiveForeground":"oklch(0.99 0.01 85)"}},
+    {"id":"built-in-dark","name":"Mørk","isBuiltIn":true,"colors":{
+      "background":"oklch(0.129 0.042 264.695)","card":"oklch(0.208 0.042 265.755)",
+      "foreground":"oklch(0.984 0.003 247.858)","primary":"oklch(0.929 0.013 255.508)",
+      "primaryForeground":"oklch(0.208 0.042 265.755)","muted":"oklch(0.279 0.041 260.031)",
+      "mutedForeground":"oklch(0.704 0.04 256.788)","accent":"oklch(0.279 0.041 260.031)",
+      "accentForeground":"oklch(0.984 0.003 247.858)","border":"oklch(1 0 0 / 10%)",
+      "destructive":"oklch(0.704 0.191 22.216)","destructiveForeground":"oklch(0.984 0.003 247.858)"}}
+  ]'),
+  ('planner', '{"weekendFactor":4,"excludeDays":14,"maxMainPerWeek":2,"defaultServings":4,"recentRatings":6}'),
+  ('week_template', '{"1":"recipe","2":"recipe","3":"recipe","4":"recipe","5":"recipe","6":"recipe","7":"recipe"}')
+on conflict (key) do nothing;
+
+-- ─── Butikskategorier (rækkefølgen kan ændres i appen) ─────────────────────
+insert into madplan.shop_categories (name, sort_order) values
+  ('Frugt & grønt', 10),
+  ('Brød & bageri', 20),
+  ('Kød & fisk', 30),
+  ('Pålæg', 40),
+  ('Mejeri & æg', 50),
+  ('Kolonial', 60),
+  ('Krydderier & smagsgivere', 70),
+  ('Dåser & glas', 80),
+  ('Frost', 90),
+  ('Drikkevarer', 100),
+  ('Husholdning', 110),
+  ('Andet', 120)
+on conflict do nothing;
+
+-- ─── Ingredienskatalog ─────────────────────────────────────────────────────
+-- (navn, kategori, standardenhed, basisvare i varelager)
+insert into madplan.ingredients (name, category_id, default_unit, is_staple)
+select v.name, c.id, v.unit, v.staple
+from (values
+  -- Frugt & grønt
+  ('Løg', 'Frugt & grønt', 'stk', false),
+  ('Rødløg', 'Frugt & grønt', 'stk', false),
+  ('Forårsløg', 'Frugt & grønt', 'stk', false),
+  ('Skalotteløg', 'Frugt & grønt', 'stk', false),
+  ('Porre', 'Frugt & grønt', 'stk', false),
+  ('Hvidløg', 'Frugt & grønt', 'fed', false),
+  ('Ingefær', 'Frugt & grønt', 'g', false),
+  ('Gulerod', 'Frugt & grønt', 'stk', false),
+  ('Kartofler', 'Frugt & grønt', 'g', false),
+  ('Søde kartofler', 'Frugt & grønt', 'g', false),
+  ('Pastinak', 'Frugt & grønt', 'stk', false),
+  ('Knoldselleri', 'Frugt & grønt', 'g', false),
+  ('Bladselleri', 'Frugt & grønt', 'stilk', false),
+  ('Rødbede', 'Frugt & grønt', 'stk', false),
+  ('Peberfrugt', 'Frugt & grønt', 'stk', false),
+  ('Chili', 'Frugt & grønt', 'stk', false),
+  ('Squash', 'Frugt & grønt', 'stk', false),
+  ('Aubergine', 'Frugt & grønt', 'stk', false),
+  ('Agurk', 'Frugt & grønt', 'stk', false),
+  ('Tomater', 'Frugt & grønt', 'stk', false),
+  ('Cherrytomater', 'Frugt & grønt', 'g', false),
+  ('Broccoli', 'Frugt & grønt', 'stk', false),
+  ('Blomkål', 'Frugt & grønt', 'stk', false),
+  ('Spidskål', 'Frugt & grønt', 'stk', false),
+  ('Hvidkål', 'Frugt & grønt', 'g', false),
+  ('Rødkål', 'Frugt & grønt', 'g', false),
+  ('Grønkål', 'Frugt & grønt', 'g', false),
+  ('Rosenkål', 'Frugt & grønt', 'g', false),
+  ('Spinat', 'Frugt & grønt', 'g', false),
+  ('Salat', 'Frugt & grønt', 'stk', false),
+  ('Rucola', 'Frugt & grønt', 'g', false),
+  ('Champignon', 'Frugt & grønt', 'g', false),
+  ('Avocado', 'Frugt & grønt', 'stk', false),
+  ('Majs', 'Frugt & grønt', 'stk', false),
+  ('Sukkerærter', 'Frugt & grønt', 'g', false),
+  ('Bønnespirer', 'Frugt & grønt', 'g', false),
+  ('Citron', 'Frugt & grønt', 'stk', false),
+  ('Lime', 'Frugt & grønt', 'stk', false),
+  ('Æble', 'Frugt & grønt', 'stk', false),
+  ('Banan', 'Frugt & grønt', 'stk', false),
+  ('Persille', 'Frugt & grønt', 'bundt', false),
+  ('Purløg', 'Frugt & grønt', 'bundt', false),
+  ('Dild', 'Frugt & grønt', 'bundt', false),
+  ('Basilikum', 'Frugt & grønt', 'potte', false),
+  ('Koriander', 'Frugt & grønt', 'bundt', false),
+  ('Mynte', 'Frugt & grønt', 'bundt', false),
+  ('Frisk timian', 'Frugt & grønt', 'bundt', false),
+  ('Rosmarin', 'Frugt & grønt', 'bundt', false),
+  -- Brød & bageri
+  ('Rugbrød', 'Brød & bageri', 'stk', false),
+  ('Franskbrød', 'Brød & bageri', 'stk', false),
+  ('Burgerboller', 'Brød & bageri', 'stk', false),
+  ('Pitabrød', 'Brød & bageri', 'stk', false),
+  ('Tortillas', 'Brød & bageri', 'stk', false),
+  ('Naanbrød', 'Brød & bageri', 'stk', false),
+  ('Flutes', 'Brød & bageri', 'stk', false),
+  -- Kød & fisk
+  ('Hakket oksekød', 'Kød & fisk', 'g', false),
+  ('Hakket svinekød', 'Kød & fisk', 'g', false),
+  ('Hakket gris og kalv', 'Kød & fisk', 'g', false),
+  ('Hakket kylling', 'Kød & fisk', 'g', false),
+  ('Kyllingebryst', 'Kød & fisk', 'g', false),
+  ('Kyllingelår', 'Kød & fisk', 'g', false),
+  ('Hel kylling', 'Kød & fisk', 'stk', false),
+  ('Oksefilet', 'Kød & fisk', 'g', false),
+  ('Oksebryst', 'Kød & fisk', 'g', false),
+  ('Oksesteg', 'Kød & fisk', 'g', false),
+  ('Flæskesteg', 'Kød & fisk', 'g', false),
+  ('Svinemørbrad', 'Kød & fisk', 'g', false),
+  ('Svinekoteletter', 'Kød & fisk', 'stk', false),
+  ('Bacon', 'Kød & fisk', 'g', false),
+  ('Pølser', 'Kød & fisk', 'stk', false),
+  ('Chorizo', 'Kød & fisk', 'g', false),
+  ('Lammekølle', 'Kød & fisk', 'g', false),
+  ('Laks', 'Kød & fisk', 'g', false),
+  ('Torsk', 'Kød & fisk', 'g', false),
+  ('Rejer', 'Kød & fisk', 'g', false),
+  ('Rødspættefilet', 'Kød & fisk', 'g', false),
+  -- Pålæg
+  ('Skinke', 'Pålæg', 'g', false),
+  ('Leverpostej', 'Pålæg', 'stk', false),
+  ('Rullepølse', 'Pålæg', 'g', false),
+  ('Røget laks', 'Pålæg', 'g', false),
+  -- Mejeri & æg
+  ('Æg', 'Mejeri & æg', 'stk', false),
+  ('Smør', 'Mejeri & æg', 'g', true),
+  ('Mælk', 'Mejeri & æg', 'dl', false),
+  ('Fløde', 'Mejeri & æg', 'dl', false),
+  ('Madlavningsfløde', 'Mejeri & æg', 'dl', false),
+  ('Creme fraiche', 'Mejeri & æg', 'dl', false),
+  ('Skyr', 'Mejeri & æg', 'g', false),
+  ('Græsk yoghurt', 'Mejeri & æg', 'g', false),
+  ('Revet ost', 'Mejeri & æg', 'g', false),
+  ('Parmesan', 'Mejeri & æg', 'g', false),
+  ('Mozzarella', 'Mejeri & æg', 'stk', false),
+  ('Feta', 'Mejeri & æg', 'g', false),
+  ('Flødeost', 'Mejeri & æg', 'g', false),
+  ('Halloumi', 'Mejeri & æg', 'g', false),
+  -- Kolonial
+  ('Hvedemel', 'Kolonial', 'g', true),
+  ('Sukker', 'Kolonial', 'g', true),
+  ('Rørsukker', 'Kolonial', 'g', false),
+  ('Ris', 'Kolonial', 'g', true),
+  ('Jasminris', 'Kolonial', 'g', false),
+  ('Risottoris', 'Kolonial', 'g', false),
+  ('Spaghetti', 'Kolonial', 'g', true),
+  ('Pasta', 'Kolonial', 'g', true),
+  ('Lasagneplader', 'Kolonial', 'g', false),
+  ('Nudler', 'Kolonial', 'g', false),
+  ('Couscous', 'Kolonial', 'g', false),
+  ('Bulgur', 'Kolonial', 'g', false),
+  ('Havregryn', 'Kolonial', 'g', false),
+  ('Rasp', 'Kolonial', 'g', false),
+  ('Bagepulver', 'Kolonial', 'tsk', true),
+  ('Natron', 'Kolonial', 'tsk', true),
+  ('Maizena', 'Kolonial', 'spsk', true),
+  ('Gær', 'Kolonial', 'g', false),
+  ('Olivenolie', 'Kolonial', 'spsk', true),
+  ('Rapsolie', 'Kolonial', 'spsk', true),
+  ('Sesamolie', 'Kolonial', 'spsk', false),
+  ('Eddike', 'Kolonial', 'spsk', true),
+  ('Balsamicoeddike', 'Kolonial', 'spsk', true),
+  ('Honning', 'Kolonial', 'spsk', true),
+  ('Peanutbutter', 'Kolonial', 'spsk', false),
+  ('Røde linser', 'Kolonial', 'g', false),
+  ('Nødder', 'Kolonial', 'g', false),
+  ('Pinjekerner', 'Kolonial', 'g', false),
+  -- Krydderier & smagsgivere
+  ('Salt', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Peber', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Paprika', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Røget paprika', 'Krydderier & smagsgivere', 'tsk', false),
+  ('Karry', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Spidskommen', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Koriander (stødt)', 'Krydderier & smagsgivere', 'tsk', false),
+  ('Gurkemeje', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Kanel', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Oregano', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Timian (tørret)', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Chiliflager', 'Krydderier & smagsgivere', 'tsk', true),
+  ('Cayennepeber', 'Krydderier & smagsgivere', 'tsk', false),
+  ('Garam masala', 'Krydderier & smagsgivere', 'tsk', false),
+  ('Laurbærblade', 'Krydderier & smagsgivere', 'stk', true),
+  ('Muskatnød', 'Krydderier & smagsgivere', 'tsk', false),
+  ('Hvidløgspulver', 'Krydderier & smagsgivere', 'tsk', false),
+  ('Tacokrydderi', 'Krydderier & smagsgivere', 'pose', false),
+  ('Grøntsagsbouillon', 'Krydderier & smagsgivere', 'terning', true),
+  ('Hønsebouillon', 'Krydderier & smagsgivere', 'terning', true),
+  ('Oksebouillon', 'Krydderier & smagsgivere', 'terning', true),
+  ('Fond', 'Krydderier & smagsgivere', 'spsk', false),
+  ('Soya', 'Krydderier & smagsgivere', 'spsk', true),
+  ('Fiskesauce', 'Krydderier & smagsgivere', 'spsk', false),
+  ('Sriracha', 'Krydderier & smagsgivere', 'spsk', false),
+  ('Sennep', 'Krydderier & smagsgivere', 'spsk', true),
+  ('Dijonsennep', 'Krydderier & smagsgivere', 'spsk', false),
+  ('Ketchup', 'Krydderier & smagsgivere', 'spsk', true),
+  ('Mayonnaise', 'Krydderier & smagsgivere', 'spsk', false),
+  ('Tomatpuré', 'Krydderier & smagsgivere', 'spsk', true),
+  ('Rød karrypasta', 'Krydderier & smagsgivere', 'spsk', false),
+  ('Pesto', 'Krydderier & smagsgivere', 'spsk', false),
+  -- Dåser & glas
+  ('Hakkede tomater', 'Dåser & glas', 'dåse', false),
+  ('Flåede tomater', 'Dåser & glas', 'dåse', false),
+  ('Passata', 'Dåser & glas', 'g', false),
+  ('Kokosmælk', 'Dåser & glas', 'dåse', false),
+  ('Kikærter', 'Dåser & glas', 'dåse', false),
+  ('Kidneybønner', 'Dåser & glas', 'dåse', false),
+  ('Sorte bønner', 'Dåser & glas', 'dåse', false),
+  ('Majs (dåse)', 'Dåser & glas', 'dåse', false),
+  ('Oliven', 'Dåser & glas', 'g', false),
+  ('Kapers', 'Dåser & glas', 'spsk', false),
+  ('Syltede agurker', 'Dåser & glas', 'g', false),
+  ('Salsa', 'Dåser & glas', 'glas', false),
+  -- Frost
+  ('Ærter (frost)', 'Frost', 'g', false),
+  ('Spinat (frost)', 'Frost', 'g', false),
+  ('Wokgrøntsager (frost)', 'Frost', 'g', false),
+  ('Pommes frites (frost)', 'Frost', 'g', false),
+  ('Butterdej', 'Frost', 'pakke', false),
+  -- Drikkevarer
+  ('Rødvin', 'Drikkevarer', 'dl', false),
+  ('Hvidvin', 'Drikkevarer', 'dl', false),
+  -- Husholdning
+  ('Opvaskemiddel', 'Husholdning', null, false),
+  ('Opvasketabs', 'Husholdning', null, false),
+  ('Køkkenrulle', 'Husholdning', null, false),
+  ('Bagepapir', 'Husholdning', null, false),
+  ('Alufolie', 'Husholdning', null, false),
+  ('Fryseposer', 'Husholdning', null, false),
+  ('Affaldsposer', 'Husholdning', null, false),
+  ('Toiletpapir', 'Husholdning', null, false)
+) as v(name, category, unit, staple)
+join madplan.shop_categories c on c.name = v.category
+on conflict do nothing;
+
+-- ─── Tag-grupper og tags ───────────────────────────────────────────────────
+insert into madplan.tag_groups (name, sort_order, is_main_ingredient) values
+  ('Hovedingrediens', 10, true),
+  ('Type', 20, false),
+  ('Køkken', 30, false),
+  ('Særlige', 40, false);
+
+insert into madplan.tags (name, group_id, sort_order, is_weekend)
+select v.name, g.id, v.sort_order, v.is_weekend
+from (values
+  ('Kylling', 'Hovedingrediens', 10, false),
+  ('Oksekød', 'Hovedingrediens', 20, false),
+  ('Svinekød', 'Hovedingrediens', 30, false),
+  ('Lam', 'Hovedingrediens', 40, false),
+  ('Fisk', 'Hovedingrediens', 50, false),
+  ('Skaldyr', 'Hovedingrediens', 60, false),
+  ('Vegetar', 'Hovedingrediens', 70, false),
+  ('Pasta', 'Type', 10, false),
+  ('Suppe', 'Type', 20, false),
+  ('Gryderet', 'Type', 30, false),
+  ('Ovnret', 'Type', 40, false),
+  ('Salat', 'Type', 50, false),
+  ('Wok', 'Type', 60, false),
+  ('Burger', 'Type', 70, false),
+  ('Pizza', 'Type', 80, false),
+  ('Dansk', 'Køkken', 10, false),
+  ('Italiensk', 'Køkken', 20, false),
+  ('Asiatisk', 'Køkken', 30, false),
+  ('Mexicansk', 'Køkken', 40, false),
+  ('Indisk', 'Køkken', 50, false),
+  ('Mellemøstlig', 'Køkken', 60, false),
+  ('Weekendmad', 'Særlige', 10, true),
+  ('Hurtig', 'Særlige', 20, false),
+  ('Børnevenlig', 'Særlige', 30, false),
+  ('Gæster', 'Særlige', 40, false)
+) as v(name, grp, sort_order, is_weekend)
+join madplan.tag_groups g on g.name = v.grp
+on conflict do nothing;

@@ -1,0 +1,216 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase, unwrap } from "@/lib/supabase";
+import { DEFAULT_THEMES, type Theme } from "@/lib/themes";
+import {
+  DEFAULT_PLANNER,
+  type Ingredient,
+  type MealLog,
+  type MemberName,
+  type PlannerSettings,
+  type Rating,
+  type Recipe,
+  type RecipeDetail,
+  type RecipeIngredient,
+  type RecipeListItem,
+  type RecipeStep,
+  type ShopCategory,
+  type Tag,
+  type TagGroup,
+  type WeekTemplate,
+} from "@/lib/types";
+
+export const DEFAULT_APP_NAME = "Astons Køkken";
+
+// ─── Indstillinger ──────────────────────────────────────────────────────────
+
+export type AppSettings = {
+  appName: string;
+  themes: Theme[];
+  activeThemeId: string;
+  planner: PlannerSettings;
+  weekTemplate: WeekTemplate;
+};
+
+export async function fetchSettings(): Promise<AppSettings> {
+  const rows = unwrap(await supabase.from("settings").select("key, value")) as {
+    key: string;
+    value: unknown;
+  }[];
+  const get = (k: string) => rows.find((r) => r.key === k)?.value;
+
+  const themes = Array.isArray(get("themes")) ? (get("themes") as Theme[]) : DEFAULT_THEMES;
+  const name = get("app_name");
+  const active = get("active_theme");
+  const planner = (get("planner") ?? {}) as Partial<PlannerSettings>;
+  const template = (get("week_template") ?? {}) as WeekTemplate;
+
+  return {
+    appName: typeof name === "string" && name.trim() ? name : DEFAULT_APP_NAME,
+    themes: themes.length ? themes : DEFAULT_THEMES,
+    activeThemeId: typeof active === "string" ? active : "built-in-light",
+    planner: { ...DEFAULT_PLANNER, ...planner },
+    weekTemplate: template,
+  };
+}
+
+export function useSettings() {
+  return useQuery({ queryKey: ["settings"], queryFn: fetchSettings, staleTime: 5 * 60_000 });
+}
+
+export async function saveSetting(key: string, value: unknown) {
+  unwrap(await supabase.from("settings").upsert({ key, value }));
+}
+
+// ─── Mig selv / medlemskab ──────────────────────────────────────────────────
+
+export type Me = { userId: string; email: string | null; isMember: boolean; isAdmin: boolean };
+
+export async function fetchMe(): Promise<Me | null> {
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+  if (!user) return null;
+  const row = unwrap(
+    await supabase.from("members").select("is_admin").eq("user_id", user.id).maybeSingle(),
+  ) as { is_admin: boolean } | null;
+  return {
+    userId: user.id,
+    email: user.email ?? null,
+    isMember: !!row,
+    isAdmin: !!row?.is_admin,
+  };
+}
+
+export function useMe() {
+  return useQuery({ queryKey: ["me"], queryFn: fetchMe, staleTime: 5 * 60_000 });
+}
+
+export function useMemberNames() {
+  return useQuery({
+    queryKey: ["member-names"],
+    queryFn: async () => unwrap(await supabase.rpc("member_names")) as MemberName[],
+    staleTime: 10 * 60_000,
+  });
+}
+
+// ─── Katalog: kategorier, ingredienser, tags ────────────────────────────────
+
+export function useCategories() {
+  return useQuery({
+    queryKey: ["categories"],
+    queryFn: async () =>
+      unwrap(
+        await supabase.from("shop_categories").select("*").order("sort_order").order("name"),
+      ) as ShopCategory[],
+  });
+}
+
+export function useIngredients() {
+  return useQuery({
+    queryKey: ["ingredients"],
+    queryFn: async () =>
+      unwrap(await supabase.from("ingredients").select("*").order("name")) as Ingredient[],
+  });
+}
+
+export function useTagGroups() {
+  return useQuery({
+    queryKey: ["tag-groups"],
+    queryFn: async () =>
+      unwrap(
+        await supabase.from("tag_groups").select("*").order("sort_order").order("name"),
+      ) as TagGroup[],
+  });
+}
+
+export function useTags() {
+  return useQuery({
+    queryKey: ["tags"],
+    queryFn: async () =>
+      unwrap(await supabase.from("tags").select("*").order("sort_order").order("name")) as Tag[],
+  });
+}
+
+// ─── Opskrifter ─────────────────────────────────────────────────────────────
+
+const RECENT_RATINGS = DEFAULT_PLANNER.recentRatings;
+
+function summarize(ratings: Pick<Rating, "score" | "created_at">[]) {
+  if (!ratings.length) return { avg: null, recent: null };
+  const avg = ratings.reduce((s, r) => s + r.score, 0) / ratings.length;
+  const recent = [...ratings]
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    .slice(0, RECENT_RATINGS);
+  return { avg, recent: recent.reduce((s, r) => s + r.score, 0) / recent.length };
+}
+
+type RecipeListRow = Recipe & {
+  recipe_tags: { tag_id: string }[];
+  ratings: { score: number; created_at: string }[];
+  meal_log: { eaten_on: string }[];
+  recipe_ingredients: { ingredient_id: string }[];
+};
+
+export async function fetchRecipeList(): Promise<RecipeListItem[]> {
+  const rows = unwrap(
+    await supabase
+      .from("recipes")
+      .select(
+        "*, recipe_tags(tag_id), ratings(score, created_at), meal_log(eaten_on), recipe_ingredients(ingredient_id)",
+      )
+      .eq("archived", false)
+      .order("title"),
+  ) as RecipeListRow[];
+
+  return rows.map(({ recipe_tags, ratings, meal_log, recipe_ingredients, ...r }) => {
+    const { avg, recent } = summarize(ratings);
+    const eaten = meal_log.map((m) => m.eaten_on).sort();
+    return {
+      ...r,
+      tag_ids: recipe_tags.map((t) => t.tag_id),
+      avg_score: avg,
+      recent_score: recent,
+      rating_count: ratings.length,
+      last_eaten: eaten.length ? eaten[eaten.length - 1] : null,
+      times_eaten: eaten.length,
+      ingredient_ids: recipe_ingredients.map((i) => i.ingredient_id),
+    };
+  });
+}
+
+export function useRecipes() {
+  return useQuery({ queryKey: ["recipes"], queryFn: fetchRecipeList });
+}
+
+type RecipeDetailRow = Recipe & {
+  recipe_ingredients: (RecipeIngredient & { ingredient: Ingredient })[];
+  recipe_steps: RecipeStep[];
+  recipe_tags: { tag_id: string }[];
+  ratings: Rating[];
+  meal_log: MealLog[];
+};
+
+export async function fetchRecipe(id: string): Promise<RecipeDetail | null> {
+  const row = unwrap(
+    await supabase
+      .from("recipes")
+      .select(
+        "*, recipe_ingredients(*, ingredient:ingredients(*)), recipe_steps(*), recipe_tags(tag_id), ratings(*), meal_log(*)",
+      )
+      .eq("id", id)
+      .maybeSingle(),
+  ) as RecipeDetailRow | null;
+  if (!row) return null;
+  const { recipe_ingredients, recipe_steps, recipe_tags, ratings, meal_log, ...r } = row;
+  return {
+    ...r,
+    ingredients: [...recipe_ingredients].sort((a, b) => a.sort_order - b.sort_order),
+    steps: [...recipe_steps].sort((a, b) => a.sort_order - b.sort_order),
+    tag_ids: recipe_tags.map((t) => t.tag_id),
+    ratings: [...ratings].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    meals: [...meal_log].sort((a, b) => b.eaten_on.localeCompare(a.eaten_on)),
+  };
+}
+
+export function useRecipe(id: string) {
+  return useQuery({ queryKey: ["recipe", id], queryFn: () => fetchRecipe(id) });
+}
