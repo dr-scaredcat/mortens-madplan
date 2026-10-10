@@ -8,6 +8,7 @@ import {
   type MealLog,
   type MemberName,
   type PlanDay,
+  type PlanDaySide,
   type PlannerSettings,
   type Rating,
   type Recipe,
@@ -249,6 +250,23 @@ export function usePlanDays(from: string, to: string) {
           .lte("day", to)
           .order("day"),
       ) as PlanDay[],
+  });
+}
+
+export function usePlanSides(from: string, to: string) {
+  return useQuery({
+    queryKey: ["plan-sides", from, to],
+    queryFn: async () => {
+      const res = await supabase
+        .from("plan_day_sides")
+        .select("day, recipe_id, sort_order")
+        .gte("day", from)
+        .lte("day", to)
+        .order("sort_order");
+      // Tabellen findes først efter migrationen om tilbehør — indtil da: ingen tilbehør
+      if (res.error) return [] as PlanDaySide[];
+      return (res.data ?? []) as PlanDaySide[];
+    },
   });
 }
 

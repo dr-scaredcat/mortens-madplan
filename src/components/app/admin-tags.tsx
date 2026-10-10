@@ -72,9 +72,12 @@ export function AdminTags() {
         <h2 className="text-lg font-semibold">Tags</h2>
         <p className="text-sm text-muted-foreground">
           Tags bruges til søgning og ugeplan. Tags i en gruppe markeret som{" "}
-          <em>hovedingrediens</em> bruges til at variere ugen, og tags markeret som{" "}
+          <em>hovedingrediens</em> bruges til at variere ugen, og tags i gruppen markeret som{" "}
+          <em>kategori</em> deler opskriftssiden op, og tags markeret som{" "}
           <em>weekendmad</em> foretrækkes fredag og lørdag. Opskrifter med et tag markeret{" "}
           <em>aldrig i ugeplan</em> foreslås aldrig automatisk, men kan stadig vælges manuelt.
+          Opskrifter med et tag markeret <em>tilbehør</em> kan tilføjes ved siden af dagens ret i
+          ugeplanen.
         </p>
       </div>
 
@@ -98,6 +101,13 @@ export function AdminTags() {
                     onCheckedChange={(v) => updateGroup(group, { is_main_ingredient: v })}
                   />
                   Hovedingrediens
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Switch
+                    checked={!!group.is_category}
+                    onCheckedChange={(v) => updateGroup(group, { is_category: v })}
+                  />
+                  Kategori
                 </label>
                 <div className="ml-auto flex">
                   <Button size="icon" variant="ghost" className="h-8 w-8" disabled={idx === 0} onClick={() => moveGroup(idx, -1)} aria-label="Flyt op">
@@ -167,6 +177,13 @@ export function AdminTags() {
                       onCheckedChange={(v) => updateTag(t, { exclude_from_planner: v })}
                     />
                     Aldrig i ugeplan
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Switch
+                      checked={!!t.is_side_dish}
+                      onCheckedChange={(v) => updateTag(t, { is_side_dish: v })}
+                    />
+                    Tilbehør
                   </label>
                   <Button
                     size="icon"

@@ -21,6 +21,8 @@ export type TagGroup = {
   name: string;
   sort_order: number;
   is_main_ingredient: boolean;
+  /** Gruppen er "Kategori" (Hovedret, Tilbehør, …) — opskriftssiden deles op efter den */
+  is_category?: boolean;
 };
 
 export type Tag = {
@@ -31,6 +33,8 @@ export type Tag = {
   is_weekend: boolean;
   /** Opskrifter med dette tag foreslås aldrig automatisk i ugeplanen */
   exclude_from_planner: boolean;
+  /** Opskrifter med dette tag er tilbehør (dele-elementer) til en hovedret */
+  is_side_dish?: boolean;
 };
 
 export type Recipe = {
@@ -97,6 +101,13 @@ export type PlanDay = {
   servings: number | null;
   free_text: string | null;
   locked: boolean;
+};
+
+/** Tilbehør tilføjet til en dag i ugeplanen */
+export type PlanDaySide = {
+  day: string; // YYYY-MM-DD
+  recipe_id: string;
+  sort_order: number;
 };
 
 export type ShoppingItem = {
