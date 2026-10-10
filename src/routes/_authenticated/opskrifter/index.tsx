@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
-import { useIngredients, useRecipes, useTags } from "@/lib/queries";
+import { useIngredients, useRecipes, useTagGroups, useTags } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,6 +53,7 @@ function RecipesPage() {
   const navigate = Route.useNavigate();
   const { data: recipes, isLoading, error } = useRecipes();
   const { data: tags = [] } = useTags();
+  const { data: groups = [] } = useTagGroups();
   const { data: ingredients = [] } = useIngredients();
   const [showFilters, setShowFilters] = useState((search.tags?.length ?? 0) > 0);
 
@@ -84,6 +85,28 @@ function RecipesPage() {
     for (const r of filtered) for (const id of r.tag_ids) counts.set(id, (counts.get(id) ?? 0) + 1);
     return { filtered: sortRecipes(filtered, sort), counts };
   }, [recipes, q, selected, sort, ingredientNames, tagMap]);
+
+  // Del listen op efter tag-gruppen "Kategori" (Hovedret, Tilbehør, Brød …)
+  const sections = useMemo(() => {
+    const categoryGroupIds = new Set(groups.filter((g) => g.is_category).map((g) => g.id));
+    const categories = tags
+      .filter((t) => t.group_id && categoryGroupIds.has(t.group_id))
+      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name, "da"));
+    if (categories.length === 0) return [{ id: "all", name: null as string | null, recipes: filtered }];
+
+    const byCat = new Map<string, RecipeListItem[]>();
+    const none: RecipeListItem[] = [];
+    for (const r of filtered) {
+      // En opskrift vises under sin første kategori
+      const cat = categories.find((c) => r.tag_ids.includes(c.id));
+      if (cat) byCat.set(cat.id, [...(byCat.get(cat.id) ?? []), r]);
+      else none.push(r);
+    }
+    return [
+      ...categories.map((c) => ({ id: c.id, name: c.name as string | null, recipes: byCat.get(c.id) ?? [] })),
+      { id: "none", name: "Uden kategori" as string | null, recipes: none },
+    ].filter((s) => s.recipes.length > 0);
+  }, [filtered, tags, groups]);
 
   const toggleTag = (id: string) =>
     setSearch({
@@ -176,9 +199,21 @@ function RecipesPage() {
       ) : filtered.length === 0 ? (
         <p className="py-10 text-center text-muted-foreground">Ingen opskrifter matcher.</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((r) => (
-            <RecipeCard key={r.id} recipe={r} tags={tagMap} />
+        <div className="space-y-8">
+          {sections.map((sec) => (
+            <section key={sec.id}>
+              {sec.name && (
+                <h2 className="mb-3 flex items-baseline gap-2 font-serif text-2xl">
+                  {sec.name}
+                  <span className="font-sans text-sm text-muted-foreground">{sec.recipes.length}</span>
+                </h2>
+              )}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+                {sec.recipes.map((r) => (
+                  <RecipeCard key={r.id} recipe={r} tags={tagMap} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

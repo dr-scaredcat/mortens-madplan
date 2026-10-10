@@ -440,6 +440,18 @@ function WeekPlanPage() {
                       {row.recipe_id ? "Opskriften findes ikke længere." : "Ingen ret valgt endnu."}
                     </p>
                   )}
+                  {row.recipe_id && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 shrink-0 self-center text-muted-foreground hover:text-destructive"
+                      aria-label="Fjern retten fra dagen"
+                      title="Fjern retten fra dagen"
+                      onClick={() => update(day, { recipe_id: null })}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ) : row.kind === "fri" ? (
                 <Input

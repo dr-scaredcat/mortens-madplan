@@ -21,6 +21,8 @@ export type TagGroup = {
   name: string;
   sort_order: number;
   is_main_ingredient: boolean;
+  /** Gruppen er "Kategori" (Hovedret, Tilbehør, …) — opskriftssiden deles op efter den */
+  is_category?: boolean;
 };
 
 export type Tag = {

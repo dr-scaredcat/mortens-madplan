@@ -19,12 +19,12 @@ export function RecipeCard({ recipe, tags }: { recipe: RecipeListItem; tags: Map
         <div className="aspect-[4/3] w-full bg-muted">
           <RecipeImage src={recipe.image_url} alt={recipe.title} />
         </div>
-        <div className="flex flex-1 flex-col gap-2 p-4">
-          <h3 className="font-serif text-xl leading-tight">{recipe.title}</h3>
+        <div className="flex flex-1 flex-col gap-1.5 p-2.5 sm:gap-2 sm:p-4">
+          <h3 className="font-serif text-base leading-tight sm:text-xl">{recipe.title}</h3>
           <StarsDisplay value={recipe.avg_score} count={recipe.rating_count} />
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground sm:gap-y-1 sm:text-xs">
             {recipe.prep_minutes ? (
-              <span className="inline-flex items-center gap-1">
+              <span className="hidden items-center gap-1 sm:inline-flex">
                 <Clock className="h-3.5 w-3.5" />
                 {formatMinutes(recipe.prep_minutes)}
               </span>
@@ -35,7 +35,7 @@ export function RecipeCard({ recipe, tags }: { recipe: RecipeListItem; tags: Map
             </span>
           </div>
           {recipeTags.length > 0 && (
-            <div className="mt-auto flex flex-wrap gap-1 pt-1">
+            <div className="mt-auto hidden flex-wrap gap-1 pt-1 sm:flex">
               {recipeTags.map((t) => (
                 <Badge
                   key={t.id}
