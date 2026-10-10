@@ -17,6 +17,9 @@ import {
   CookingPot,
   ListPlus,
   Users,
+  Plus,
+  X,
+  Salad,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -41,12 +44,18 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime";
 import {
   fetchRecipe,
   usePlanDays,
+  usePlanSides,
   useRecipes,
   useSettings,
   useTagGroups,
   useTags,
 } from "@/lib/queries";
-import { upsertPlanDays, type PlanDayRow } from "@/lib/mutations";
+import {
+  addPlanSide,
+  removePlanSide,
+  upsertPlanDays,
+  type PlanDayRow,
+} from "@/lib/mutations";
 import {
   addDays,
   isoWeekday,
@@ -111,14 +120,26 @@ function WeekPlanPage() {
   const { data: tags = [] } = useTags();
   const { data: groups = [] } = useTagGroups();
   const { data: settings } = useSettings();
+  const { data: sideRows = [] } = usePlanSides(rangeFrom, rangeTo);
   useRealtimeInvalidate("plan_days", [["plan-days"], ["recipes"]]);
+  useRealtimeInvalidate("plan_day_sides", [["plan-sides"]]);
 
   const [picking, setPicking] = useState<string | null>(null);
+  const [pickingSide, setPickingSide] = useState<string | null>(null);
   const [shopSources, setShopSources] = useState<ShoppingSource[] | null>(null);
   const [busy, setBusy] = useState(false);
 
   const recipeMap = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
   const rowMap = useMemo(() => new Map(planRows.map((r) => [r.day, r])), [planRows]);
+  const sidesByDay = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const sr of sideRows) m.set(sr.day, [...(m.get(sr.day) ?? []), sr.recipe_id]);
+    return m;
+  }, [sideRows]);
+  const sideTagIds = useMemo(
+    () => new Set(tags.filter((t) => t.is_side_dish).map((t) => t.id)),
+    [tags],
+  );
   const defaultServings = settings?.planner.defaultServings ?? 4;
 
   /** Den viste dag: gemt række, ellers standardugen fra indstillingerne. */
@@ -171,6 +192,36 @@ function WeekPlanPage() {
 
   const update = (day: string, patch: Partial<PlanDayRow>) => save([{ ...dayRow(day), ...patch }]);
 
+  async function addSide(day: string, recipeId: string) {
+    try {
+      // Dagen skal være gemt, før der kan knyttes tilbehør til den
+      const saved = rowMap.get(day);
+      if (!saved || saved.id.startsWith("tmp-")) await upsertPlanDays([dayRow(day)]);
+      await addPlanSide(day, recipeId, (sidesByDay.get(day)?.length ?? 0) + 1);
+    } catch (e) {
+      toast.error(
+        /plan_day_sides/.test((e as Error).message)
+          ? "Tilbehør kræver databaseopdateringen (20261010173000_madplan_side_dishes.sql)."
+          : (e as Error).message,
+      );
+    } finally {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["plan-days"] }),
+        qc.invalidateQueries({ queryKey: ["plan-sides"] }),
+      ]);
+    }
+  }
+
+  async function removeSide(day: string, recipeId: string) {
+    try {
+      await removePlanSide(day, recipeId);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      await qc.invalidateQueries({ queryKey: ["plan-sides"] });
+    }
+  }
+
   async function suggestWeek() {
     if (!settings) return;
     if (recipes.length === 0) return toast.error("Opret nogle opskrifter først.");
@@ -217,23 +268,30 @@ function WeekPlanPage() {
     if (days.length === 0) return toast.info("Der er ingen retter at købe ind til i resten af ugen.");
     setBusy(true);
     try {
+      const ids = new Set<string>();
+      for (const d of days) {
+        ids.add(d.recipe_id!);
+        for (const sid of sidesByDay.get(d.day) ?? []) ids.add(sid);
+      }
       const details = await Promise.all(
-        [...new Set(days.map((d) => d.recipe_id!))].map((id) =>
+        [...ids].map((id) =>
           qc.fetchQuery({ queryKey: ["recipe", id], queryFn: () => fetchRecipe(id) }),
         ),
       );
       const byId = new Map(details.filter(Boolean).map((r) => [r!.id, r!]));
       const sources: ShoppingSource[] = days
-        .map((d) => {
-          const r = byId.get(d.recipe_id!);
-          if (!r) return null;
-          return {
-            title: `${WEEKDAYS[isoWeekday(d.day) - 1].slice(0, 3)}: ${r.title}`,
-            recipeServings: r.servings,
-            servings: d.servings ?? defaultServings,
-            ingredients: r.ingredients,
-          };
-        })
+        .flatMap((d) =>
+          [d.recipe_id!, ...(sidesByDay.get(d.day) ?? [])].map((rid) => {
+            const r = byId.get(rid);
+            if (!r) return null;
+            return {
+              title: `${WEEKDAYS[isoWeekday(d.day) - 1].slice(0, 3)}: ${r.title}`,
+              recipeServings: r.servings,
+              servings: d.servings ?? defaultServings,
+              ingredients: r.ingredients,
+            };
+          }),
+        )
         .filter((x): x is ShoppingSource => !!x);
       setShopSources(sources);
     } catch (e) {
@@ -398,6 +456,37 @@ function WeekPlanPage() {
                 <KindLabel kind={row.kind} />
               )}
 
+              {row.kind === "recipe" && (sidesByDay.get(day)?.length ?? 0) > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {sidesByDay.get(day)!.map((sid) => {
+                    const side = recipeMap.get(sid);
+                    return (
+                      <span
+                        key={sid}
+                        className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 py-0.5 pl-2.5 pr-1 text-sm"
+                      >
+                        <Salad className="h-3.5 w-3.5 text-muted-foreground" />
+                        {side ? (
+                          <Link to="/opskrifter/$id" params={{ id: sid }} className="hover:underline">
+                            {side.title}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">Slettet opskrift</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeSide(day, sid)}
+                          className="rounded-full p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
+                          aria-label={`Fjern ${side?.title ?? "tilbehør"}`}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
               {row.kind === "recipe" && (
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <Button
@@ -413,6 +502,10 @@ function WeekPlanPage() {
                   <Button size="sm" variant="outline" className="bg-card" onClick={() => setPicking(day)}>
                     <ListPlus className="mr-1 h-3.5 w-3.5" />
                     Vælg selv
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setPickingSide(day)}>
+                    <Plus className="mr-1 h-3.5 w-3.5" />
+                    Tilbehør
                   </Button>
                   <Select
                     value={String(row.servings ?? defaultServings)}
@@ -445,6 +538,25 @@ function WeekPlanPage() {
           onPick={(r) => {
             void update(picking, { kind: "recipe", recipe_id: r.id });
             setPicking(null);
+          }}
+        />
+      )}
+
+      {pickingSide && (
+        <SidePickerDialog
+          day={pickingSide}
+          recipes={recipes}
+          sideTagIds={sideTagIds}
+          exclude={
+            new Set([
+              ...(dayRow(pickingSide).recipe_id ? [dayRow(pickingSide).recipe_id!] : []),
+              ...(sidesByDay.get(pickingSide) ?? []),
+            ])
+          }
+          onClose={() => setPickingSide(null)}
+          onPick={(r) => {
+            void addSide(pickingSide, r.id);
+            setPickingSide(null);
           }}
         />
       )}
@@ -548,3 +660,84 @@ function RecipePickerDialog({
   );
 }
 
+/** Vælg tilbehør til en dag. Viser opskrifter med et tilbehørs-tag — eller alle. */
+function SidePickerDialog({
+  day,
+  recipes,
+  sideTagIds,
+  exclude,
+  onClose,
+  onPick,
+}: {
+  day: string;
+  recipes: RecipeListItem[];
+  sideTagIds: Set<string>;
+  exclude: Set<string>;
+  onClose: () => void;
+  onPick: (r: RecipeListItem) => void;
+}) {
+  const [q, setQ] = useState("");
+  const hasSides = recipes.some((r) => r.tag_ids.some((t) => sideTagIds.has(t)));
+  const [showAll, setShowAll] = useState(!hasSides);
+
+  const needle = q.trim().toLowerCase();
+  const list = recipes
+    .filter((r) => !exclude.has(r.id))
+    .filter((r) => showAll || r.tag_ids.some((t) => sideTagIds.has(t)))
+    .filter((r) => !needle || r.title.toLowerCase().includes(needle))
+    .sort((a, b) => a.title.localeCompare(b.title, "da"));
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="flex max-h-[90dvh] flex-col">
+        <DialogHeader>
+          <DialogTitle>Tilføj tilbehør</DialogTitle>
+          <DialogDescription>
+            {WEEKDAYS[isoWeekday(day) - 1]} {formatDate(day)}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Søg…" className="pl-9" autoFocus />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={showAll}
+            onChange={(e) => setShowAll(e.target.checked)}
+            className="h-4 w-4 accent-[var(--primary)]"
+          />
+          Vis alle opskrifter, ikke kun tilbehør
+        </label>
+        <ul className="-mx-2 flex-1 divide-y divide-border overflow-y-auto">
+          {list.map((recipe) => (
+            <li key={recipe.id}>
+              <button
+                type="button"
+                onClick={() => onPick(recipe)}
+                className="flex w-full items-center gap-3 px-2 py-2 text-left hover:bg-muted"
+              >
+                <div className="h-12 w-14 shrink-0 overflow-hidden rounded bg-muted">
+                  <RecipeImage src={recipe.image_url} alt="" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{recipe.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {recipe.avg_score != null ? `★ ${recipe.avg_score.toFixed(1).replace(".", ",")}` : "Ingen vurdering"}
+                  </p>
+                </div>
+              </button>
+            </li>
+          ))}
+          {list.length === 0 && (
+            <li className="px-2 py-6 text-center text-sm text-muted-foreground">
+              {showAll
+                ? "Ingen opskrifter matcher."
+                : "Ingen opskrifter er tagget som tilbehør endnu. Giv fx kartoffelsalaten tagget “Tilbehør” — eller vis alle opskrifter."}
+            </li>
+          )}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}

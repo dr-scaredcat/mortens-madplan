@@ -273,6 +273,19 @@ export async function upsertPlanDays(rows: PlanDayRow[]) {
   unwrap(await supabase.from("plan_days").upsert(rows, { onConflict: "day" }));
 }
 
+/** Tilføj tilbehør til en dag (dagen skal findes i plan_days). */
+export async function addPlanSide(day: string, recipeId: string, sortOrder = 0) {
+  unwrap(
+    await supabase
+      .from("plan_day_sides")
+      .upsert({ day, recipe_id: recipeId, sort_order: sortOrder }, { onConflict: "day,recipe_id" }),
+  );
+}
+
+export async function removePlanSide(day: string, recipeId: string) {
+  unwrap(await supabase.from("plan_day_sides").delete().eq("day", day).eq("recipe_id", recipeId));
+}
+
 /** Registrér passerede dage i ugeplanen som spist. */
 export async function syncMealLog() {
   unwrap(await supabase.rpc("sync_meal_log"));

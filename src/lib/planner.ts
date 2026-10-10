@@ -46,7 +46,10 @@ function prepare(ctx: PlannerContext): Prepared {
     ctx.tags.filter((t) => t.group_id && mainGroupIds.has(t.group_id)).map((t) => t.id),
   );
   const weekendTagIds = new Set(ctx.tags.filter((t) => t.is_weekend).map((t) => t.id));
-  const manualTagIds = new Set(ctx.tags.filter((t) => t.exclude_from_planner).map((t) => t.id));
+  // Tilbehør og "Aldrig i ugeplan" foreslås ikke automatisk som dagens ret
+  const manualTagIds = new Set(
+    ctx.tags.filter((t) => t.exclude_from_planner || t.is_side_dish).map((t) => t.id),
+  );
   const weekendIds = new Set<string>();
   const manualOnlyIds = new Set<string>();
   const mainOf = new Map<string, string[]>();
