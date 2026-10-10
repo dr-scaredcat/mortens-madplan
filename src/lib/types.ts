@@ -29,6 +29,8 @@ export type Tag = {
   group_id: string | null;
   sort_order: number;
   is_weekend: boolean;
+  /** Opskrifter med dette tag foreslås aldrig automatisk i ugeplanen */
+  exclude_from_planner: boolean;
 };
 
 export type Recipe = {
@@ -52,6 +54,8 @@ export type RecipeIngredient = {
   amount: number | null;
   unit: string | null;
   note: string | null;
+  /** Valgfri overskrift, fx "Sauce" — ingredienser med samme afsnit vises samlet */
+  section: string | null;
   sort_order: number;
 };
 
@@ -61,6 +65,8 @@ export type RecipeStep = {
   sort_order: number;
   text: string;
   timer_minutes: number | null;
+  /** Valgfri overskrift for trinnet, fx "Sauce" */
+  section: string | null;
 };
 
 export type MealLog = {

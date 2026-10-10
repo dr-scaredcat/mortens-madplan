@@ -40,6 +40,7 @@ import {
   scaleAmount,
   todayISO,
 } from "@/lib/format";
+import { groupBySection } from "@/lib/sections";
 import type { Rating } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/opskrifter/$id/")({
@@ -232,22 +233,33 @@ function RecipePage() {
               </button>
             </p>
           )}
-          <Card className="divide-y divide-border">
-            {recipe.ingredients.length === 0 && (
-              <p className="p-4 text-sm text-muted-foreground">Ingen ingredienser.</p>
-            )}
-            {recipe.ingredients.map((i) => (
-              <div key={i.id} className="flex items-baseline justify-between gap-3 px-4 py-2.5">
-                <span>
-                  {i.ingredient.name}
-                  {i.note && <span className="text-sm text-muted-foreground">, {i.note}</span>}
-                </span>
-                <span className="shrink-0 text-sm text-muted-foreground">
-                  {formatQuantity(scaleAmount(i.amount, recipe.servings, people), i.unit)}
-                </span>
+          {recipe.ingredients.length === 0 && (
+            <Card className="p-4 text-sm text-muted-foreground">Ingen ingredienser.</Card>
+          )}
+          <div className="space-y-3">
+            {groupBySection(recipe.ingredients).map((g, gi) => (
+              <div key={gi}>
+                {g.section && (
+                  <h3 className="mb-1 px-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    {g.section}
+                  </h3>
+                )}
+                <Card className="divide-y divide-border">
+                  {g.items.map((i) => (
+                    <div key={i.id} className="flex items-baseline justify-between gap-3 px-4 py-2.5">
+                      <span>
+                        {i.ingredient.name}
+                        {i.note && <span className="text-sm text-muted-foreground">, {i.note}</span>}
+                      </span>
+                      <span className="shrink-0 text-sm text-muted-foreground">
+                        {formatQuantity(scaleAmount(i.amount, recipe.servings, people), i.unit)}
+                      </span>
+                    </div>
+                  ))}
+                </Card>
               </div>
             ))}
-          </Card>
+          </div>
         </section>
 
         {/* Fremgangsmåde */}
@@ -258,7 +270,13 @@ function RecipePage() {
           ) : (
             <ol className="space-y-4">
               {recipe.steps.map((s, idx) => (
-                <li key={s.id} className="flex gap-3">
+                <li key={s.id} className="space-y-2">
+                  {s.section && s.section !== recipe.steps[idx - 1]?.section && (
+                    <h3 className="pt-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      {s.section}
+                    </h3>
+                  )}
+                  <div className="flex gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
                     {idx + 1}
                   </span>
@@ -270,6 +288,7 @@ function RecipePage() {
                         {s.timer_minutes} min
                       </span>
                     )}
+                  </div>
                   </div>
                 </li>
               ))}

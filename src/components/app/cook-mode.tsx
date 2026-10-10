@@ -38,6 +38,7 @@ export function CookMode({
 
   const steps = recipe.steps;
   const current = steps[step];
+  const next = steps[step + 1] ?? null;
 
   // Opdatér visningen hvert sekund
   useEffect(() => {
@@ -178,10 +179,16 @@ export function CookMode({
               {servings} {servings === 1 ? "person" : "personer"} · tryk for at krydse af
             </p>
             <ul className="space-y-1">
-              {recipe.ingredients.map((i) => {
+              {recipe.ingredients.map((i, idx) => {
                 const done = checked.has(i.id);
+                const prevSection = recipe.ingredients[idx - 1]?.section ?? null;
                 return (
                   <li key={i.id}>
+                    {i.section && i.section !== prevSection && (
+                      <p className="px-2 pt-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        {i.section}
+                      </p>
+                    )}
                     <button
                       type="button"
                       onClick={() =>
@@ -214,6 +221,9 @@ export function CookMode({
           <div className="mx-auto flex max-w-2xl flex-col gap-6">
             <p className="text-sm font-medium text-primary">
               Trin {step + 1} af {steps.length}
+              {current.section && (
+                <span className="text-muted-foreground"> · {current.section}</span>
+              )}
             </p>
             <p className="text-2xl leading-relaxed sm:text-3xl">{current.text}</p>
             {current.timer_minutes && (
@@ -226,6 +236,18 @@ export function CookMode({
                 <Timer className="mr-2 h-5 w-5" />
                 Start timer · {current.timer_minutes} min
               </Button>
+            )}
+            {next && (
+              <button
+                type="button"
+                onClick={() => setStep((s) => Math.min(s + 1, steps.length - 1))}
+                className="mt-2 border-t border-border pt-4 text-left text-muted-foreground/70 transition hover:text-muted-foreground"
+              >
+                <span className="text-xs font-medium uppercase tracking-wide">
+                  Næste{next.section && next.section !== current.section ? ` · ${next.section}` : ""}
+                </span>
+                <span className="mt-1 line-clamp-4 block text-lg leading-relaxed">{next.text}</span>
+              </button>
             )}
           </div>
         ) : (

@@ -40,7 +40,7 @@ export function SiteHeader({ showNav = true }: { showNav?: boolean }) {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <Link to="/" className="flex items-center gap-2.5 font-serif tracking-tight">
             <AppLogo className="h-9 w-9 text-primary" />
-            <span className="text-2xl leading-none">{appName}</span>
+            <span className="font-title text-2xl leading-none">{appName}</span>
           </Link>
         </div>
       </div>

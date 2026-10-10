@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { useSettings } from "@/lib/queries";
 import { applyThemeColors, THEME_CACHE_KEY } from "@/lib/themes";
 import { oklchToHex, isOklchString } from "@/lib/color-utils";
+import { applyFonts, FONT_CACHE_KEY, FONT_OPTIONS } from "@/lib/fonts";
 
 // Inline boot-script: sætter cachede tema-farver som CSS-variabler FØR første
 // paint, så standardtemaet ikke blinker, før det aktive tema er hentet fra
@@ -46,6 +47,19 @@ const THEME_BOOT_SCRIPT = `
     set("--border", c.border);
     set("--input", c.muted);
     set("--ring", c.primary);
+  } catch (e) {}
+  try {
+    var f = JSON.parse(localStorage.getItem("${FONT_CACHE_KEY}") || "null");
+    if (f && f.heading) {
+      var st = document.documentElement.style;
+      st.setProperty("--font-heading", f.heading);
+      st.setProperty("--font-title", f.title || f.heading);
+      if (f.href) {
+        var l = document.createElement("link");
+        l.id = "app-fonts"; l.rel = "stylesheet"; l.href = f.href;
+        document.head.appendChild(l);
+      }
+    }
   } catch (e) {}
 })();
 `;
@@ -178,6 +192,21 @@ function ThemeLoader() {
     document
       .querySelector('meta[name="apple-mobile-web-app-title"]')
       ?.setAttribute("content", data.appName);
+
+    applyFonts(data.headingFont, data.titleFont);
+    try {
+      const stack = (k: string) => FONT_OPTIONS.find((o) => o.key === k)?.stack;
+      localStorage.setItem(
+        FONT_CACHE_KEY,
+        JSON.stringify({
+          heading: stack(data.headingFont),
+          title: stack(data.titleFont),
+          href: document.getElementById("app-fonts")?.getAttribute("href") ?? null,
+        }),
+      );
+    } catch {
+      // ignorér
+    }
   }, [data]);
 
   return null;

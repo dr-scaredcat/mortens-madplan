@@ -488,7 +488,10 @@ function RecipePickerDialog({
     const c = { ...ctx, planned: new Map(ctx.planned) };
     c.planned.delete(day);
     return scoreForDay(day, c).sort(
-      (a, b) => Number(a.excluded) - Number(b.excluded) || b.weight - a.weight,
+      (a, b) =>
+        Number(a.manualOnly) - Number(b.manualOnly) ||
+        Number(a.excluded) - Number(b.excluded) ||
+        b.weight - a.weight,
     );
   }, [ctx, day]);
 
@@ -509,7 +512,7 @@ function RecipePickerDialog({
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Søg…" className="pl-9" autoFocus />
         </div>
         <ul className="-mx-2 flex-1 divide-y divide-border overflow-y-auto">
-          {list.map(({ recipe, excluded }) => (
+          {list.map(({ recipe, excluded, manualOnly }) => (
             <li key={recipe.id}>
               <button
                 type="button"
@@ -530,6 +533,7 @@ function RecipePickerDialog({
                     {recipe.avg_score != null ? `★ ${recipe.avg_score.toFixed(1).replace(".", ",")} · ` : ""}
                     {recipe.last_eaten ? `spist ${formatAgo(recipe.last_eaten)}` : "ikke spist før"}
                     {excluded && " · for nylig"}
+                    {manualOnly && " · aldrig automatisk"}
                   </p>
                 </div>
               </button>

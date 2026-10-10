@@ -12,6 +12,8 @@
 //   weekend:   fredag/lørdag ganges weekendmad med weekendFactor; på andre
 //              dage divideres med den. Ikke-weekendretter fredag/lørdag
 //              divideres også med den — de kan altså komme med, bare sjældnere.
+//   "Aldrig i ugeplan": opskrifter med et tag markeret exclude_from_planner
+//              foreslås aldrig automatisk, men kan stadig vælges manuelt.
 //   variation: samme hovedingrediens som dagen før/efter giver ×0,1; er
 //              hovedingrediensen allerede brugt maxMainPerWeek gange, ×0,05.
 
@@ -34,6 +36,7 @@ export type PlannerContext = {
 
 type Prepared = {
   weekendIds: Set<string>;
+  manualOnlyIds: Set<string>;
   mainOf: Map<string, string[]>;
 };
 
@@ -43,16 +46,19 @@ function prepare(ctx: PlannerContext): Prepared {
     ctx.tags.filter((t) => t.group_id && mainGroupIds.has(t.group_id)).map((t) => t.id),
   );
   const weekendTagIds = new Set(ctx.tags.filter((t) => t.is_weekend).map((t) => t.id));
+  const manualTagIds = new Set(ctx.tags.filter((t) => t.exclude_from_planner).map((t) => t.id));
   const weekendIds = new Set<string>();
+  const manualOnlyIds = new Set<string>();
   const mainOf = new Map<string, string[]>();
   for (const r of ctx.recipes) {
     if (r.tag_ids.some((t) => weekendTagIds.has(t))) weekendIds.add(r.id);
+    if (r.tag_ids.some((t) => manualTagIds.has(t))) manualOnlyIds.add(r.id);
     mainOf.set(
       r.id,
       r.tag_ids.filter((t) => mainTagIds.has(t)),
     );
   }
-  return { weekendIds, mainOf };
+  return { weekendIds, manualOnlyIds, mainOf };
 }
 
 function addDays(iso: string, n: number): string {
@@ -85,7 +91,14 @@ function daysSince(recipe: RecipeListItem, day: string, ctx: PlannerContext): nu
   return best === Infinity ? NEVER_EATEN_DAYS : best;
 }
 
-export type Scored = { recipe: RecipeListItem; weight: number; excluded: boolean };
+export type Scored = {
+  recipe: RecipeListItem;
+  weight: number;
+  /** Spist for nylig (inden for excludeDays) */
+  excluded: boolean;
+  /** Har et "Aldrig i ugeplan"-tag — kan kun vælges manuelt */
+  manualOnly: boolean;
+};
 
 /** Beregn vægten af alle opskrifter for én dag. */
 export function scoreForDay(day: string, ctx: PlannerContext, prep = prepare(ctx)): Scored[] {
@@ -125,7 +138,7 @@ export function scoreForDay(day: string, ctx: PlannerContext, prep = prepare(ctx
     if (mains.some((m) => neighbourMains.has(m))) w *= 0.1;
     if (mains.some((m) => (mainCount.get(m) ?? 0) >= s.maxMainPerWeek)) w *= 0.05;
 
-    return { recipe, weight: w, excluded };
+    return { recipe, weight: w, excluded, manualOnly: prep.manualOnlyIds.has(recipe.id) };
   });
 }
 
@@ -150,7 +163,9 @@ export function suggestForDay(
   avoid: Set<string> = new Set(),
 ): RecipeListItem | null {
   const prep = prepare(ctx);
-  const all = scoreForDay(day, ctx, prep);
+  // Opskrifter markeret "Aldrig i ugeplan" foreslås aldrig automatisk
+  const all = scoreForDay(day, ctx, prep).filter((s) => !s.manualOnly);
+  if (all.length === 0) return null;
   const allowed = all.filter((s) => !avoid.has(s.recipe.id));
   // Er der så få opskrifter, at alle er udelukket, må dubletter komme med
   const scored = allowed.length ? allowed : all;
