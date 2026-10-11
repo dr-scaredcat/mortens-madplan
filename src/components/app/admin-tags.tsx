@@ -52,6 +52,19 @@ export function AdminTags() {
     );
   }
 
+  // Kun tags i kategori-grupper har en manuel rækkefølge (styrer opskriftssidens afsnit)
+  async function moveTag(list: Tag[], idx: number, dir: -1 | 1) {
+    const to = idx + dir;
+    if (to < 0 || to >= list.length) return;
+    const arr = [...list];
+    [arr[idx], arr[to]] = [arr[to], arr[idx]];
+    await run(() =>
+      Promise.all(
+        arr.map((t, i) => supabase.from("tags").update({ sort_order: (i + 1) * 10 }).eq("id", t.id).then(unwrap)),
+      ),
+    );
+  }
+
   async function addGroup() {
     if (!newGroup.trim()) return;
     const max = groups.reduce((m, g) => Math.max(m, g.sort_order), 0);
@@ -136,9 +149,38 @@ export function AdminTags() {
               <p className="font-medium">Andre (uden gruppe)</p>
             )}
 
+            {group?.is_category && groupTags.length > 1 && (
+              <p className="text-xs text-muted-foreground">
+                Rækkefølgen her er den rækkefølge, afsnittene vises i på opskriftssiden.
+              </p>
+            )}
             <ul className="space-y-1.5">
-              {groupTags.map((t) => (
+              {groupTags.map((t, tIdx) => (
                 <li key={t.id} className="flex flex-wrap items-center gap-2">
+                  {group?.is_category && (
+                    <div className="flex">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        disabled={tIdx === 0}
+                        onClick={() => moveTag(groupTags, tIdx, -1)}
+                        aria-label={`Flyt ${t.name} op`}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        disabled={tIdx === groupTags.length - 1}
+                        onClick={() => moveTag(groupTags, tIdx, 1)}
+                        aria-label={`Flyt ${t.name} ned`}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                   <Input
                     defaultValue={t.name}
                     className="h-8 max-w-[14rem] flex-1"
