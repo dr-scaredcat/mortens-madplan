@@ -247,7 +247,7 @@ recipe("Kyllingeramen med blødkogte æg",
 
 # ---------------------------------------------------------------- Weekend
 recipe("Pulled pork i burgerboller",
-  "Kødet skal i ovnen i ca. 5 timer. Server med syltede rødløg i bløde boller.", 6, 330,
+  "Kødet skal i ovnen i ca. 5 timer. Server i bløde boller med coleslaw og syltede rødløg.", 6, 330,
   ["Hovedretter", "Svinekød", "Ovnret", "Burger", "Weekendmad", "Gæster"],
   ["Kød|Svinenakke|1.5|kg|uden ben",
    "Rub|Brun farin|2|spsk|", "Rub|Røget paprika|2|spsk|", "Rub|Salt|1|spsk|", "Rub|Peber|1|tsk|",
@@ -256,12 +256,16 @@ recipe("Pulled pork i burgerboller",
    "BBQ-sauce|Sennep|1|spsk|", "BBQ-sauce|Soya|1|spsk|",
    "Syltede rødløg|Rødløg|2|stk|i tynde ringe", "Syltede rødløg|Æbleeddike|1|dl|",
    "Syltede rødløg|Vand|1|dl|", "Syltede rødløg|Sukker|2|spsk|", "Syltede rødløg|Salt|1|tsk|",
+   "Coleslaw|Hvidkål|300|g|finsnittet", "Coleslaw|Rødkål|100|g|finsnittet", "Coleslaw|Gulerod|2|stk|groftrevet",
+   "Coleslaw|Mayonnaise|1|dl|", "Coleslaw|Creme fraiche|1|dl|", "Coleslaw|Æbleeddike|1|spsk|",
+   "Coleslaw|Dijonsennep|1|tsk|", "Coleslaw|Sukker|1|tsk|", "Coleslaw|Salt|||", "Coleslaw|Peber|||",
    "Servering|Burgerboller|8|stk|"],
   ["Kød|Bland rub'en og gnid den grundigt ind i kødet. Gerne dagen før.|",
    "Kød|Læg kødet i et ovnfast fad med 1 dl vand, dæk tæt med låg eller folie, og steg ved 140 °C, til kødet falder fra hinanden.|300",
    "Syltede rødløg|Kog eddike, vand, sukker og salt op og hæld over løgene. Lad dem trække mindst 30 minutter.|30",
    "BBQ-sauce|Kog alle ingredienser til saucen sammen et par minutter.|5",
-   "Servering|Riv kødet fra hinanden med to gafler og vend det med BBQ-sauce og lidt af stegeskyen. Server i lune boller med syltede rødløg.|"])
+   "Coleslaw|Rør mayonnaise, creme fraiche, eddike, sennep og sukker sammen, og vend kål og gulerod i. Smag til med salt og peber, og lad den trække i køleskabet.|30",
+   "Servering|Riv kødet fra hinanden med to gafler og vend det med BBQ-sauce og lidt af stegeskyen. Server i lune boller med coleslaw og syltede rødløg.|"])
 
 recipe("Hjemmelavet pizza",
   "Brug jeres opskrift på Pizzadej. Toppingen her er en klassisk skinkepizza – byt frit.", 4, 30,
