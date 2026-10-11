@@ -179,11 +179,31 @@ export function useTagGroups() {
   });
 }
 
+/**
+ * Tags i en kategori-gruppe (fx Hovedretter, Forret, Dessert) står i den
+ * rækkefølge, admin har valgt (sort_order). Alle andre tags står alfabetisk.
+ */
 export function useTags() {
   return useQuery({
     queryKey: ["tags"],
-    queryFn: async () =>
-      unwrap(await supabase.from("tags").select("*").order("sort_order").order("name")) as Tag[],
+    queryFn: async () => {
+      const [tags, groups] = await Promise.all([
+        supabase.from("tags").select("*").then(unwrap) as Promise<Tag[]>,
+        supabase.from("tag_groups").select("id, is_category").then(unwrap) as Promise<
+          Pick<TagGroup, "id" | "is_category">[]
+        >,
+      ]);
+      const categoryGroups = new Set(groups.filter((g) => g.is_category).map((g) => g.id));
+      // Kategori-tags samles pr. gruppe og sorteres efter sort_order; resten alfabetisk.
+      const catKey = (t: Tag) => (t.group_id && categoryGroups.has(t.group_id) ? t.group_id : "");
+      return [...tags].sort((a, b) => {
+        const ka = catKey(a);
+        const kb = catKey(b);
+        if (ka !== kb) return ka.localeCompare(kb);
+        if (ka && a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+        return a.name.localeCompare(b.name, "da");
+      });
+    },
   });
 }
 
