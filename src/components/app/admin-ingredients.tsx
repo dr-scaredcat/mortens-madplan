@@ -16,7 +16,7 @@ import type { Ingredient } from "@/lib/types";
 
 /**
  * Ingredienskataloget. Kategorien bestemmer, hvor varen havner på
- * indkøbslisten; "Basisvare" betyder at den registreres i varelageret.
+ * indkøbslisten; "Basisvare" betyder at den vises under Basisvarer.
  */
 export function AdminIngredients() {
   const qc = useQueryClient();
@@ -65,7 +65,7 @@ export function AdminIngredients() {
         <div>
           <h2 className="text-lg font-semibold">Ingredienser</h2>
           <p className="text-sm text-muted-foreground">
-            {ingredients.length} ingredienser. “Basisvare” vises i varelageret.
+            {ingredients.length} ingredienser. “Basisvare” vises under Basisvarer.
           </p>
         </div>
         <Popover open={addOpen} onOpenChange={setAddOpen}>

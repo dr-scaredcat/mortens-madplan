@@ -31,7 +31,7 @@ import {
 import { amountToInput, formatQuantity, parseAmount, UNITS } from "@/lib/format";
 import { parseIngredientLine } from "@/lib/ingredient-parser";
 import { cn } from "@/lib/utils";
-import type { ShoppingItem } from "@/lib/types";
+import type { Ingredient, ShoppingItem } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/indkoebsliste")({
   head: () => ({ meta: [{ title: "Indkøbsliste — Astons Køkken" }] }),
@@ -225,15 +225,17 @@ function ItemRow({
   );
 }
 
+type Draft = { name: string; amount: number | null; unit: string | null; ingredient: Ingredient | null };
+
 /**
  * Tilføj en vare. Tekst som "2 l mælk" deles automatisk op i mængde, enhed og
- * navn, og navnet matches mod ingredienskataloget for at finde kategorien.
+ * navn. Derefter åbner et vindue, hvor mængden kan rettes – og hvis varen ikke
+ * findes i ingredienskataloget, kan den oprettes med kategori og standardenhed.
  */
 function AddItemBar() {
-  const qc = useQueryClient();
   const { data: catalog = [] } = useIngredients();
   const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [draft, setDraft] = useState<Draft | null>(null);
 
   const needle = parseIngredientLine(text).name.toLowerCase();
   const suggestions =
@@ -241,22 +243,14 @@ function AddItemBar() {
       ? catalog.filter((c) => c.name.toLowerCase().startsWith(needle)).slice(0, 5)
       : [];
 
-  async function add(raw: string) {
+  function open(raw: string, picked?: Ingredient) {
     const line = raw.trim();
-    if (!line) return;
+    if (!line && !picked) return;
     const p = parseIngredientLine(line);
-    setBusy(true);
-    try {
-      await addShoppingItems([
-        { name: p.name || line, amount: p.amount, unit: p.unit, source: null },
-      ]);
-      await qc.invalidateQueries({ queryKey: ["shopping"] });
-      setText("");
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    const name = picked?.name ?? (p.name || line);
+    const ingredient =
+      picked ?? catalog.find((c) => c.name.toLowerCase() === name.toLowerCase()) ?? null;
+    setDraft({ name, amount: p.amount, unit: p.unit, ingredient });
   }
 
   return (
@@ -264,7 +258,7 @@ function AddItemBar() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void add(text);
+          open(text);
         }}
         className="flex gap-2"
       >
@@ -276,7 +270,7 @@ function AddItemBar() {
           enterKeyHint="done"
           autoComplete="off"
         />
-        <Button type="submit" disabled={busy || !text.trim()} aria-label="Tilføj">
+        <Button type="submit" disabled={!text.trim()} aria-label="Tilføj">
           <Plus className="h-4 w-4" />
         </Button>
       </form>
@@ -286,13 +280,7 @@ function AddItemBar() {
             <button
               key={s.id}
               type="button"
-              onClick={() => {
-                const p = parseIngredientLine(text);
-                const qty = [p.amount != null ? amountToInput(p.amount) : "", p.unit ?? ""]
-                  .filter(Boolean)
-                  .join(" ");
-                void add(`${qty} ${s.name}`.trim());
-              }}
+              onClick={() => open(text, s)}
               className="shrink-0 rounded-full border border-border bg-card px-3 py-1 text-sm hover:border-primary/50"
             >
               {s.name}
@@ -300,7 +288,204 @@ function AddItemBar() {
           ))}
         </div>
       )}
+      <AddItemDialog
+        draft={draft}
+        onClose={() => setDraft(null)}
+        onAdded={() => {
+          setDraft(null);
+          setText("");
+        }}
+      />
     </div>
+  );
+}
+
+/**
+ * Vinduet der vises, når en vare tilføjes manuelt: mængde og enhed – og for
+ * nye varer også kategori og standardenhed, så de kan gemmes som ingrediens.
+ */
+function AddItemDialog({
+  draft,
+  onClose,
+  onAdded,
+}: {
+  draft: Draft | null;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const qc = useQueryClient();
+  const { data: categories = [] } = useCategories();
+  const { data: catalog = [] } = useIngredients();
+  const [name, setName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [unit, setUnit] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [defaultUnit, setDefaultUnit] = useState("");
+  const [saveIngredient, setSaveIngredient] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [lastDraft, setLastDraft] = useState<Draft | null>(null);
+
+  // Nulstil felterne, når vinduet åbnes med en ny vare
+  if (draft && draft !== lastDraft) {
+    setLastDraft(draft);
+    setName(draft.name);
+    setAmount(amountToInput(draft.amount));
+    setUnit(draft.unit ?? (draft.amount != null ? (draft.ingredient?.default_unit ?? "") : ""));
+    setCategoryId("");
+    setDefaultUnit(draft.unit ?? "");
+    setSaveIngredient(true);
+  }
+
+  // Findes navnet (evt. rettet) i kataloget?
+  const ingredient =
+    catalog.find((c) => c.name.toLowerCase() === name.trim().toLowerCase()) ?? null;
+  const isNew = !ingredient && name.trim().length > 0;
+
+  async function submit() {
+    const n = name.trim();
+    if (!n) return;
+    const amt = amount.trim() ? parseAmount(amount) : null;
+    if (amount.trim() && amt == null) return toast.error("Ugyldig mængde");
+    if (isNew && saveIngredient && !categoryId) return toast.error("Vælg en kategori");
+    setBusy(true);
+    try {
+      let ingredientId = ingredient?.id ?? null;
+      if (isNew && saveIngredient) {
+        const ing = await createIngredient({
+          name: n,
+          category_id: categoryId || null,
+          default_unit: defaultUnit || null,
+        });
+        ingredientId = ing.id;
+        await qc.invalidateQueries({ queryKey: ["ingredients"] });
+        toast.success(`“${ing.name}” er oprettet som ingrediens`);
+      }
+      await addShoppingItems([
+        {
+          ingredient_id: ingredientId,
+          name: n,
+          amount: amt,
+          // Uden valgt enhed bruges ingrediensens standardenhed
+          unit: amt != null ? unit || ingredient?.default_unit || (isNew ? defaultUnit : "") || null : null,
+          category_id: isNew ? categoryId || null : (ingredient?.category_id ?? null),
+          source: null,
+        },
+      ]);
+      await qc.invalidateQueries({ queryKey: ["shopping"] });
+      onAdded();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={!!draft} onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isNew ? "Ny vare" : "Tilføj vare"}</DialogTitle>
+        </DialogHeader>
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="add-name">Vare</Label>
+            <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="flex gap-2">
+            <div className="w-28 space-y-1.5">
+              <Label htmlFor="add-amount">Mængde</Label>
+              <Input
+                id="add-amount"
+                inputMode="decimal"
+                value={amount}
+                placeholder="valgfri"
+                onChange={(e) => setAmount(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <Label>Enhed</Label>
+              <Select value={unit || "none"} onValueChange={(v) => setUnit(v === "none" ? "" : v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">–</SelectItem>
+                  {[...new Set([...(unit ? [unit] : []), ...UNITS])].map((u) => (
+                    <SelectItem key={u} value={u}>
+                      {u}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {isNew && (
+            <div className="space-y-3 rounded-md border border-dashed border-border p-3">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={saveIngredient}
+                  onCheckedChange={(v) => setSaveIngredient(v === true)}
+                />
+                Opret “{name.trim()}” som ingrediens
+              </label>
+              <div className="space-y-1">
+                <Label className="text-xs">Kategori på indkøbslisten</Label>
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vælg kategori" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {saveIngredient && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Standardenhed (valgfri)</Label>
+                  <Select
+                    value={defaultUnit || "none"}
+                    onValueChange={(v) => setDefaultUnit(v === "none" ? "" : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Ingen</SelectItem>
+                      {UNITS.map((u) => (
+                        <SelectItem key={u} value={u}>
+                          {u}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>
+              Annullér
+            </Button>
+            <Button type="submit" disabled={busy || !name.trim()}>
+              Tilføj til listen
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

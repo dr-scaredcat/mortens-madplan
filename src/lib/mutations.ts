@@ -187,7 +187,7 @@ export async function deleteRating(id: string) {
   unwrap(await supabase.from("ratings").delete().eq("id", id));
 }
 
-// ─── Indkøbsliste og varelager ─────────────────────────────────────────────
+// ─── Indkøbsliste og basisvarer ─────────────────────────────────────────────
 
 export type ShoppingInput = {
   ingredient_id?: string | null;
