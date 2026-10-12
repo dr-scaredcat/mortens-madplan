@@ -302,7 +302,7 @@ function AddItemBar() {
 
 /**
  * Vinduet der vises, når en vare tilføjes manuelt: mængde og enhed – og for
- * nye varer også kategori og standardenhed, så de kan gemmes som ingrediens.
+ * nye varer også kategori og standardenhed, så de kan gemmes som vare.
  */
 function AddItemDialog({
   draft,
@@ -358,7 +358,7 @@ function AddItemDialog({
         });
         ingredientId = ing.id;
         await qc.invalidateQueries({ queryKey: ["ingredients"] });
-        toast.success(`“${ing.name}” er oprettet som ingrediens`);
+        toast.success(`“${ing.name}” er oprettet som vare`);
       }
       await addShoppingItems([
         {
@@ -434,7 +434,7 @@ function AddItemDialog({
                   checked={saveIngredient}
                   onCheckedChange={(v) => setSaveIngredient(v === true)}
                 />
-                Opret “{name.trim()}” som ingrediens
+                Opret “{name.trim()}” som vare
               </label>
               <div className="space-y-1">
                 <Label className="text-xs">Kategori på indkøbslisten</Label>
