@@ -137,8 +137,11 @@ export function CreateIngredientForm({
   initialName,
   onCreated,
   onCancel,
+  noun = "ingrediens",
 }: {
   initialName: string;
+  /** "ingrediens" i opskrifter, "vare" i admin og på indkøbslisten */
+  noun?: "ingrediens" | "vare";
   onCreated: (ing: Ingredient) => void;
   onCancel: () => void;
 }) {
@@ -170,7 +173,7 @@ export function CreateIngredientForm({
 
   return (
     <div className="space-y-3 p-3">
-      <p className="text-sm font-medium">Ny ingrediens</p>
+      <p className="text-sm font-medium">Ny {noun}</p>
       <div className="space-y-1">
         <Label className="text-xs">Navn</Label>
         <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />

@@ -15,8 +15,8 @@ import { UNITS } from "@/lib/format";
 import type { Ingredient } from "@/lib/types";
 
 /**
- * Ingredienskataloget. Kategorien bestemmer, hvor varen havner på
- * indkøbslisten; "Basisvare" betyder at den registreres i varelageret.
+ * Varekataloget (ingredienser og andre varer). Kategorien bestemmer, hvor varen havner på
+ * indkøbslisten; "Basisvare" betyder at den vises under Basisvarer.
  */
 export function AdminIngredients() {
   const qc = useQueryClient();
@@ -63,9 +63,9 @@ export function AdminIngredients() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Ingredienser</h2>
+          <h2 className="text-lg font-semibold">Varer</h2>
           <p className="text-sm text-muted-foreground">
-            {ingredients.length} ingredienser. “Basisvare” vises i varelageret.
+            {ingredients.length} varer. “Basisvare” vises under Basisvarer.
           </p>
         </div>
         <Popover open={addOpen} onOpenChange={setAddOpen}>
@@ -78,6 +78,7 @@ export function AdminIngredients() {
           <PopoverContent align="end" className="w-80 p-0">
             <CreateIngredientForm
               initialName=""
+              noun="vare"
               onCancel={() => setAddOpen(false)}
               onCreated={() => setAddOpen(false)}
             />

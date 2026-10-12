@@ -42,7 +42,7 @@ type Row = {
 /**
  * Vælg hvilke ingredienser fra en eller flere opskrifter der skal på
  * indkøbslisten. Alt er valgt, undtagen basisvarer der står som "har vi" i
- * varelageret. Basisvarer der er "løbet tør" er valgt. Alt kan til- og fravælges.
+ * basisvarerne. Basisvarer der er "løbet tør" er valgt. Alt kan til- og fravælges.
  */
 export function AddToShoppingDialog({
   open,
@@ -144,7 +144,7 @@ export function AddToShoppingDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Fravælg det, I allerede har. Basisvarer fra varelageret er fravalgt, medmindre de er
+            Fravælg det, I allerede har. Basisvarer er fravalgt, medmindre de er
             løbet tør.
           </DialogDescription>
         </DialogHeader>

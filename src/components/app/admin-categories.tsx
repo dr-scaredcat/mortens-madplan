@@ -64,7 +64,7 @@ export function AdminCategories() {
     const used = ingredients.filter((i) => i.category_id === c.id).length;
     if (
       !confirm(
-        `Slet kategorien “${c.name}”?${used ? ` ${used} ingrediens(er) mister deres kategori.` : ""}`,
+        `Slet kategorien “${c.name}”?${used ? ` ${used} vare(r) mister deres kategori.` : ""}`,
       )
     )
       return;

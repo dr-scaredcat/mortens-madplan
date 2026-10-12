@@ -13,7 +13,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/ugeplan", label: "Ugeplan" },
   { to: "/opskrifter", label: "Opskrifter" },
   { to: "/indkoebsliste", label: "Indkøbsliste" },
-  { to: "/varelager", label: "Varelager" },
+  { to: "/basisvarer", label: "Basisvarer" },
   { to: "/admin", label: "Admin", adminOnly: true },
 ];
 
