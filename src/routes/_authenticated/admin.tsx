@@ -21,7 +21,7 @@ const TABS = [
   { value: "planner", label: "Ugeplan" },
   { value: "themes", label: "Temaer" },
   { value: "access", label: "Adgang" },
-  { value: "ingredients", label: "Ingredienser" },
+  { value: "ingredients", label: "Varer" },
   { value: "categories", label: "Kategorier" },
   { value: "tags", label: "Tags" },
 ];
@@ -34,7 +34,7 @@ function AdminPage() {
     <main className="mx-auto max-w-5xl px-4 py-6 pb-safe">
       <h1 className="mb-1 font-serif text-3xl">Admin</h1>
       <p className="mb-5 text-sm text-muted-foreground">
-        Indstillinger, temaer, adgang og kataloget over ingredienser, kategorier og tags.
+        Indstillinger, temaer, adgang og kataloget over varer, kategorier og tags.
       </p>
       {!me?.isAdmin ? (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-6 text-sm">
