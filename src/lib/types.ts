@@ -149,6 +149,8 @@ export type PlannerSettings = {
   defaultServings: number;
   /** Standard antal personer, retterne skaleres til i ugeplanen. */
   planServings: number;
+  /** Antal personer, en opskrift skaleres til, når den åbnes. */
+  viewServings: number;
   /** Antal seneste vurderinger der indgår i en rets score i planlæggeren. */
   recentRatings: number;
 };
@@ -159,6 +161,7 @@ export const DEFAULT_PLANNER: PlannerSettings = {
   maxMainPerWeek: 2,
   defaultServings: 4,
   planServings: 2,
+  viewServings: 2,
   recentRatings: 6,
 };
 

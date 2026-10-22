@@ -30,7 +30,8 @@ import { RateDialog } from "@/components/app/rate-dialog";
 import { CookMode } from "@/components/app/cook-mode";
 import { AddToShoppingDialog } from "@/components/app/add-to-shopping-dialog";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { useMe, useMemberNames, useRecipe, useTags } from "@/lib/queries";
+import { useMe, useMemberNames, useRecipe, useSettings, useTags } from "@/lib/queries";
+import { DEFAULT_PLANNER } from "@/lib/types";
 import { deleteMeal, deleteRating, logMeal } from "@/lib/mutations";
 import {
   formatAgo,
@@ -55,6 +56,7 @@ function RecipePage() {
   const { data: tags = [] } = useTags();
   const { data: me } = useMe();
   const { data: members = [] } = useMemberNames();
+  const { data: settings } = useSettings();
   const wake = useWakeLock(false);
 
   const [servings, setServings] = useState<number | null>(null);
@@ -89,7 +91,9 @@ function RecipePage() {
     );
   }
 
-  const people = servings ?? recipe.servings;
+  // Opskrifter vises som standard for det antal personer, der er valgt i admin (2)
+  const people =
+    servings ?? settings?.planner.viewServings ?? DEFAULT_PLANNER.viewServings;
   const recipeTags = tags.filter((t) => recipe.tag_ids.includes(t.id));
   const avg = recipe.ratings.length
     ? recipe.ratings.reduce((s, r) => s + r.score, 0) / recipe.ratings.length
@@ -228,8 +232,8 @@ function RecipePage() {
           {people !== recipe.servings && (
             <p className="mb-2 text-xs text-muted-foreground">
               Skaleret fra {recipe.servings} personer.{" "}
-              <button className="underline" onClick={() => setServings(null)}>
-                Nulstil
+              <button className="underline" onClick={() => setServings(recipe.servings)}>
+                Vis original
               </button>
             </p>
           )}

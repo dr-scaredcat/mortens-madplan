@@ -48,6 +48,13 @@ const FIELDS: { key: keyof PlannerSettings; label: string; help: string; min: nu
     max: 20,
   },
   {
+    key: "viewServings",
+    label: "Antal personer når en opskrift åbnes",
+    help: "Ingredienserne skaleres til dette antal, når en opskrift åbnes (kan ændres på opskriften).",
+    min: 1,
+    max: 20,
+  },
+  {
     key: "defaultServings",
     label: "Antal personer for nye opskrifter",
     help: "Forudfyldt, når en ny opskrift oprettes.",
