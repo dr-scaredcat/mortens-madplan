@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { FindOfferButton } from "@/components/app/find-offer";
 import { IngredientPicker } from "@/components/app/ingredient-picker";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime";
 import { useCategories, useIngredients, useShoppingItems } from "@/lib/queries";
@@ -156,6 +157,7 @@ function PantryPage() {
                         På listen
                       </Badge>
                     )}
+                    <FindOfferButton name={i.name} />
                     {i.in_stock ? (
                       <Button
                         size="sm"

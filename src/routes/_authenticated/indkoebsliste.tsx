@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FindOfferButton } from "@/components/app/find-offer";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime";
 import { useCategories, useIngredients, useShoppingItems } from "@/lib/queries";
 import {
@@ -221,6 +222,7 @@ function ItemRow({
         </span>
         {qty && <span className="shrink-0 text-sm text-muted-foreground">{qty}</span>}
       </button>
+      {!item.checked && <FindOfferButton name={item.name} />}
     </div>
   );
 }
@@ -620,6 +622,7 @@ function EditItemDialog({ item, onClose }: { item: ShoppingItem | null; onClose:
           {item && item.sources.length > 0 && (
             <p className="text-xs text-muted-foreground">Fra: {item.sources.join(", ")}</p>
           )}
+          <FindOfferButton name={name || item?.name || ""} withLabel className="-ml-3" />
         </div>
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="ghost" className="text-destructive" onClick={remove} disabled={busy}>
