@@ -1,18 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Search, SlidersHorizontal, X } from "lucide-react";
-import { useIngredients, useRecipes, useTagGroups, useTags } from "@/lib/queries";
+import { useIngredients, useRecipes, useTagGroups, useTags, useWineStyles } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RecipeCard } from "@/components/app/recipe-card";
 import { TagChips } from "@/components/app/tag-filter";
+import { WineFilterChips } from "@/components/app/recipe-wine";
 import { cn } from "@/lib/utils";
 import type { RecipeListItem } from "@/lib/types";
 
 type SortKey = "name" | "score" | "oldest" | "newest";
 
-type Search = { q?: string; tags?: string[]; sort?: SortKey };
+/** vin = vintype ("Rødvin" …), vinstil = kategori-id'er inden for typen */
+type Search = { q?: string; tags?: string[]; sort?: SortKey; vin?: string; vinstil?: string[] };
 
 export const Route = createFileRoute("/_authenticated/opskrifter/")({
   head: () => ({ meta: [{ title: "Opskrifter — Astons Køkken" }] }),
@@ -23,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/opskrifter/")({
     sort: ["name", "score", "oldest", "newest"].includes(s.sort as string)
       ? (s.sort as SortKey)
       : undefined,
+    vin: typeof s.vin === "string" && s.vin ? s.vin : undefined,
+    vinstil: Array.isArray(s.vinstil) && s.vinstil.length ? (s.vinstil as string[]) : undefined,
   }),
   component: RecipesPage,
 });
@@ -55,11 +59,22 @@ function RecipesPage() {
   const { data: tags = [] } = useTags();
   const { data: groups = [] } = useTagGroups();
   const { data: ingredients = [] } = useIngredients();
-  const [showFilters, setShowFilters] = useState((search.tags?.length ?? 0) > 0);
+  const { data: wineStyles = [] } = useWineStyles();
+  const [showFilters, setShowFilters] = useState(
+    (search.tags?.length ?? 0) > 0 || !!search.vin,
+  );
 
   const q = search.q ?? "";
   const selected = search.tags ?? [];
   const sort = search.sort ?? "name";
+  const wineType = search.vin ?? null;
+  const wineStyleIds = search.vinstil ?? [];
+  const activeFilterCount = selected.length + (wineType ? 1 : 0);
+
+  const styleLabel = useMemo(
+    () => new Map(wineStyles.map((s) => [s.id, s.wine_label])),
+    [wineStyles],
+  );
 
   const setSearch = (patch: Partial<Search>) =>
     navigate({ search: (prev: Search) => ({ ...prev, ...patch }), replace: true });
@@ -70,7 +85,7 @@ function RecipesPage() {
     [ingredients],
   );
 
-  const { filtered, counts } = useMemo(() => {
+  const { filtered, counts, wineTypeCounts, wineStyleCounts } = useMemo(() => {
     const needle = q.trim().toLowerCase();
     const textMatch = (r: RecipeListItem) =>
       !needle ||
@@ -80,11 +95,30 @@ function RecipesPage() {
       r.tag_ids.some((id) => tagMap.get(id)?.name.toLowerCase().includes(needle));
 
     const base = (recipes ?? []).filter(textMatch);
-    const filtered = base.filter((r) => selected.every((id) => r.tag_ids.includes(id)));
+    const afterTags = base.filter((r) => selected.every((id) => r.tag_ids.includes(id)));
+
+    // Vinfilter: først typen, så evt. en eller flere kategorier inden for typen
+    const typeOf = (r: RecipeListItem) =>
+      r.wine_style_id ? (styleLabel.get(r.wine_style_id) ?? null) : null;
+    const afterType = wineType ? afterTags.filter((r) => typeOf(r) === wineType) : afterTags;
+    const filtered = wineStyleIds.length
+      ? afterType.filter((r) => r.wine_style_id && wineStyleIds.includes(r.wine_style_id))
+      : afterType;
+
+    // Tal på chips: tags tæller med vinfilteret, vintyper uden, kategorier inden for typen
     const counts = new Map<string, number>();
     for (const r of filtered) for (const id of r.tag_ids) counts.set(id, (counts.get(id) ?? 0) + 1);
-    return { filtered: sortRecipes(filtered, sort), counts };
-  }, [recipes, q, selected, sort, ingredientNames, tagMap]);
+    const wineTypeCounts = new Map<string, number>();
+    for (const r of afterTags) {
+      const t = typeOf(r);
+      if (t) wineTypeCounts.set(t, (wineTypeCounts.get(t) ?? 0) + 1);
+    }
+    const wineStyleCounts = new Map<string, number>();
+    for (const r of afterType) {
+      if (r.wine_style_id) wineStyleCounts.set(r.wine_style_id, (wineStyleCounts.get(r.wine_style_id) ?? 0) + 1);
+    }
+    return { filtered: sortRecipes(filtered, sort), counts, wineTypeCounts, wineStyleCounts };
+  }, [recipes, q, selected, sort, ingredientNames, tagMap, styleLabel, wineType, wineStyleIds]);
 
   // Del listen op efter tag-gruppen "Kategori" (Hovedret, Tilbehør, Brød …)
   const sections = useMemo(() => {
@@ -153,11 +187,11 @@ function RecipesPage() {
         <Button
           variant="outline"
           onClick={() => setShowFilters((v) => !v)}
-          className={cn("bg-card", selected.length > 0 && "border-primary/50 text-primary")}
+          className={cn("bg-card", activeFilterCount > 0 && "border-primary/50 text-primary")}
         >
           <SlidersHorizontal className="h-4 w-4 sm:mr-1" />
           <span className="hidden sm:inline">Filtre</span>
-          {selected.length > 0 && <span className="ml-1">({selected.length})</span>}
+          {activeFilterCount > 0 && <span className="ml-1">({activeFilterCount})</span>}
         </Button>
       </div>
 
@@ -178,13 +212,25 @@ function RecipesPage() {
       </div>
 
       {showFilters && (
-        <div className="mb-6 rounded-lg border border-border bg-card p-4">
-          <TagChips
-            selected={selected}
-            onToggle={toggleTag}
-            counts={counts}
-            onClear={() => setSearch({ tags: undefined })}
+        <div className="mb-6 space-y-2 rounded-lg border border-border bg-card p-4">
+          <TagChips selected={selected} onToggle={toggleTag} counts={counts} />
+          <WineFilterChips
+            type={wineType}
+            styleIds={wineStyleIds}
+            onTypeChange={(t) => setSearch({ vin: t ?? undefined, vinstil: undefined })}
+            onStylesChange={(ids) => setSearch({ vinstil: ids.length ? ids : undefined })}
+            typeCounts={wineTypeCounts}
+            styleCounts={wineStyleCounts}
           />
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setSearch({ tags: undefined, vin: undefined, vinstil: undefined })}
+              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+            >
+              Ryd filtre
+            </button>
+          )}
         </div>
       )}
 

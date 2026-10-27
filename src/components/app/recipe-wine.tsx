@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Wine } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -136,6 +137,107 @@ export function RecipeWine({
         <WineStockDialog open={stockOpen} onOpenChange={setStockOpen} style={style} styles={styles} />
       )}
     </section>
+  );
+}
+
+// ─── Filter på opskriftsoversigten ──────────────────────────────────────────
+
+/**
+ * Vinfilter i samme layout som tag-filtrene: én række med vintyper, og når en
+ * type er valgt, en række med typens kategorier. Typen er enkeltvalg (en
+ * opskrift har én vin); kategorierne kan vælges flere ad gangen.
+ */
+export function WineFilterChips({
+  type,
+  styleIds,
+  onTypeChange,
+  onStylesChange,
+  typeCounts,
+  styleCounts,
+}: {
+  type: string | null;
+  styleIds: string[];
+  onTypeChange: (type: string | null) => void;
+  onStylesChange: (ids: string[]) => void;
+  /** Antal opskrifter pr. vintype (wine_label) */
+  typeCounts: Map<string, number>;
+  /** Antal opskrifter pr. kategori */
+  styleCounts: Map<string, number>;
+}) {
+  const { data: styles = [] } = useWineStyles();
+  const types = useMemo(() => {
+    const seen = new Map<string, WineStyle>();
+    for (const s of styles) if (!seen.has(s.wine_label)) seen.set(s.wine_label, s);
+    return [...seen.entries()];
+  }, [styles]);
+  const typeStyles = styles.filter((s) => s.wine_label === type);
+
+  if (styles.length === 0) return null;
+
+  const chip = (opts: {
+    key: string;
+    label: string;
+    active: boolean;
+    count: number;
+    style?: WineStyle;
+    onClick: () => void;
+  }) => (
+    <button key={opts.key} type="button" onClick={opts.onClick}>
+      <Badge
+        variant={opts.active ? "default" : "outline"}
+        className={opts.active ? "gap-1.5" : "gap-1.5 bg-card font-normal"}
+      >
+        {opts.style && <TypeDot style={opts.style} />}
+        {opts.label}
+        <span className={opts.active ? "opacity-75" : "text-muted-foreground"}>{opts.count}</span>
+      </Badge>
+    </button>
+  );
+
+  return (
+    <div className="space-y-2">
+      <div className="grid gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-start">
+        <span className="heading-sm text-xs font-medium text-muted-foreground sm:pt-1">Vin til retten</span>
+        <div className="flex flex-wrap gap-1.5">
+          {types.map(([label, first]) =>
+            chip({
+              key: label,
+              label,
+              style: first,
+              active: type === label,
+              count: typeCounts.get(label) ?? 0,
+              onClick: () => {
+                onTypeChange(type === label ? null : label);
+                onStylesChange([]);
+              },
+            }),
+          )}
+        </div>
+      </div>
+      {type && typeStyles.length > 1 && (
+        <div className="grid gap-1.5 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-start">
+          <span className="heading-sm text-xs font-medium text-muted-foreground sm:pt-1">
+            {type}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {typeStyles.map((s) =>
+              chip({
+                key: s.id,
+                label: s.style,
+                active: styleIds.includes(s.id),
+                count: styleCounts.get(s.id) ?? 0,
+                onClick: () =>
+                  onStylesChange(
+                    styleIds.includes(s.id)
+                      ? styleIds.filter((x) => x !== s.id)
+                      : [...styleIds, s.id],
+                  ),
+              }),
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
