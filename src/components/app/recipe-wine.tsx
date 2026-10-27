@@ -129,7 +129,6 @@ export function RecipeWine({
         open={editOpen}
         onOpenChange={setEditOpen}
         recipeId={recipeId}
-        styles={styles}
         styleId={styleId}
         suggestion={suggestion}
       />
@@ -140,41 +139,77 @@ export function RecipeWine({
   );
 }
 
-// ─── Redigering ─────────────────────────────────────────────────────────────
+// ─── Kategorivælger (bruges også i opskriftsformularen) ─────────────────────
 
 const NONE = "__none__";
+
+/** Dropdown med de faste vinkategorier, grupperet efter type. `null` = ingen kategori. */
+export function WineStyleSelect({
+  id,
+  value,
+  onChange,
+}: {
+  id?: string;
+  value: string | null;
+  onChange: (styleId: string | null) => void;
+}) {
+  const { data: styles = [] } = useWineStyles();
+  const groups = useMemo(() => {
+    const m = new Map<string, WineStyle[]>();
+    for (const s of styles) m.set(s.wine_label, [...(m.get(s.wine_label) ?? []), s]);
+    return [...m.entries()];
+  }, [styles]);
+
+  return (
+    <Select value={value ?? NONE} onValueChange={(v) => onChange(v === NONE ? null : v)}>
+      <SelectTrigger id={id} className="bg-card">
+        <SelectValue placeholder="Vælg kategori" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>Ingen kategori</SelectItem>
+        {groups.map(([label, items]) => (
+          <SelectGroup key={label}>
+            <SelectLabel>{label}</SelectLabel>
+            {items.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                <span className="flex items-center gap-2">
+                  <TypeDot style={s} />
+                  {s.style}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+// ─── Redigering ─────────────────────────────────────────────────────────────
 
 function WineEditDialog({
   open,
   onOpenChange,
   recipeId,
-  styles,
   styleId,
   suggestion,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   recipeId: string;
-  styles: WineStyle[];
   styleId: string | null;
   suggestion: string | null;
 }) {
   const qc = useQueryClient();
-  const [sel, setSel] = useState(NONE);
+  const [sel, setSel] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setSel(styleId ?? NONE);
+    setSel(styleId);
     setText(suggestion ?? "");
   }, [open, styleId, suggestion]);
-
-  const groups = useMemo(() => {
-    const m = new Map<string, WineStyle[]>();
-    for (const s of styles) m.set(s.wine_label, [...(m.get(s.wine_label) ?? []), s]);
-    return [...m.entries()];
-  }, [styles]);
 
   async function save(next: { wine_style_id: string | null; wine_suggestion: string }, msg: string) {
     setBusy(true);
@@ -207,27 +242,7 @@ function WineEditDialog({
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="wine-style">Kategori</Label>
-            <Select value={sel} onValueChange={setSel}>
-              <SelectTrigger id="wine-style" className="bg-card">
-                <SelectValue placeholder="Vælg kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>Ingen kategori</SelectItem>
-                {groups.map(([label, items]) => (
-                  <SelectGroup key={label}>
-                    <SelectLabel>{label}</SelectLabel>
-                    {items.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        <span className="flex items-center gap-2">
-                          <TypeDot style={s} />
-                          {s.style}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            <WineStyleSelect id="wine-style" value={sel} onChange={setSel} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="wine-suggestion">Forslag til områder og druer</Label>
@@ -256,7 +271,7 @@ function WineEditDialog({
             disabled={busy}
             onClick={() =>
               save(
-                { wine_style_id: sel === NONE ? null : sel, wine_suggestion: text },
+                { wine_style_id: sel, wine_suggestion: text },
                 "Vinforslaget er gemt",
               )
             }

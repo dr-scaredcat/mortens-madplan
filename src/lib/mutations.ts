@@ -12,6 +12,9 @@ export type RecipeDraft = {
   prep_minutes: number | null;
   image_url: string | null;
   source_url: string;
+  /** Vin til retten — udeladt = uændret */
+  wine_style_id?: string | null;
+  wine_suggestion?: string;
   tag_ids: string[];
   ingredients: {
     ingredient_id: string;
@@ -32,6 +35,10 @@ export async function saveRecipe(draft: RecipeDraft, id?: string): Promise<strin
     prep_minutes: draft.prep_minutes,
     image_url: draft.image_url,
     source_url: draft.source_url.trim() || null,
+    ...(draft.wine_style_id !== undefined && { wine_style_id: draft.wine_style_id }),
+    ...(draft.wine_suggestion !== undefined && {
+      wine_suggestion: draft.wine_suggestion.trim() || null,
+    }),
   };
 
   let recipeId = id;
