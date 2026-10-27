@@ -30,6 +30,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { IngredientPicker } from "@/components/app/ingredient-picker";
 import { TagChips } from "@/components/app/tag-filter";
 import { RecipeImage } from "@/components/app/recipe-image";
+import { WineStyleSelect } from "@/components/app/recipe-wine";
 import { useIngredients } from "@/lib/queries";
 import {
   removeStoredImage,
@@ -82,6 +83,9 @@ export type RecipeFormInitial = {
   prep_minutes: number | null;
   image_url: string | null;
   source_url: string;
+  /** Vin til retten (valgfri — import udfylder dem ikke) */
+  wine_style_id?: string | null;
+  wine_suggestion?: string;
   tag_ids: string[];
   ingredients: IngRow[];
   steps: StepRow[];
@@ -111,6 +115,8 @@ export function initialFromRecipe(r: RecipeDetail): RecipeFormInitial {
     prep_minutes: r.prep_minutes,
     image_url: r.image_url,
     source_url: r.source_url ?? "",
+    wine_style_id: r.wine_style_id,
+    wine_suggestion: r.wine_suggestion ?? "",
     tag_ids: r.tag_ids,
     ingredients: withHeadings<(typeof r.ingredients)[number], IngRow>(
       r.ingredients,
@@ -205,6 +211,8 @@ export function RecipeForm({
   const [imageUrl, setImageUrl] = useState(initial.image_url);
   const [sourceUrl, setSourceUrl] = useState(initial.source_url);
   const [tagIds, setTagIds] = useState(initial.tag_ids);
+  const [wineStyleId, setWineStyleId] = useState<string | null>(initial.wine_style_id ?? null);
+  const [wineSuggestion, setWineSuggestion] = useState(initial.wine_suggestion ?? "");
   const [ings, setIngs] = useState<IngRow[]>(initial.ingredients);
   const [steps, setSteps] = useState<StepRow[]>(initial.steps);
   const [uploading, setUploading] = useState(false);
@@ -290,6 +298,8 @@ export function RecipeForm({
       prep_minutes: prepMin == null ? null : Math.round(prepMin),
       image_url: imageUrl,
       source_url: sourceUrl,
+      wine_style_id: wineStyleId,
+      wine_suggestion: wineSuggestion,
       tag_ids: tagIds,
       ingredients: sectioned(ings)
         .filter(({ row }) => filled.includes(row))
@@ -596,6 +606,30 @@ export function RecipeForm({
             <Heading className="mr-1 h-4 w-4" />
             Tilføj overskrift
           </Button>
+        </div>
+      </Card>
+
+      {/* Vin til retten */}
+      <Card className="space-y-3 p-4">
+        <div>
+          <h2 className="font-serif text-xl">Vin til retten</h2>
+          <p className="text-xs text-muted-foreground">
+            Kategorien bruges til at finde vine i vinkøleskabet. Begge felter er valgfri.
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="wine-style-form">Kategori</Label>
+          <WineStyleSelect id="wine-style-form" value={wineStyleId} onChange={setWineStyleId} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="wine-suggestion-form">Forslag til områder og druer</Label>
+          <Textarea
+            id="wine-suggestion-form"
+            rows={2}
+            value={wineSuggestion}
+            onChange={(e) => setWineSuggestion(e.target.value)}
+            placeholder="Fx Barbera d'Asti, Chianti Classico, Valpolicella Classico"
+          />
         </div>
       </Card>
 
