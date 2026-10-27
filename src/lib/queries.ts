@@ -18,9 +18,11 @@ import {
   type RecipeStep,
   type ShopCategory,
   type ShoppingItem,
+  type StockWine,
   type Tag,
   type TagGroup,
   type WeekTemplate,
+  type WineStyle,
 } from "@/lib/types";
 
 export const DEFAULT_APP_NAME = "Astons Køkken";
@@ -290,6 +292,30 @@ export async function fetchRecipe(id: string): Promise<RecipeDetail | null> {
 
 export function useRecipe(id: string) {
   return useQuery({ queryKey: ["recipe", id], queryFn: () => fetchRecipe(id) });
+}
+
+// ─── Vin til retten ─────────────────────────────────────────────────────────
+
+/** De faste vinkategorier. De ligger i schema public, fordi Astons Bar deler dem. */
+export function useWineStyles() {
+  return useQuery({
+    queryKey: ["wine-styles"],
+    queryFn: async () =>
+      unwrap(
+        await supabase.schema("public").from("wine_styles").select("*").order("sort_order"),
+      ) as WineStyle[],
+    staleTime: 60 * 60_000,
+  });
+}
+
+/** Vine i vinkøleskabet, der passer til en kategori — præcist match først, så nærmeste bud. */
+export function useWinesForStyle(styleId: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["wines-for-style", styleId],
+    enabled: enabled && !!styleId,
+    queryFn: async () =>
+      unwrap(await supabase.rpc("wines_for_style", { p_style_id: styleId })) as StockWine[],
+  });
 }
 
 // ─── Indkøbsliste ───────────────────────────────────────────────────────────

@@ -29,6 +29,7 @@ import { RecipeImage } from "@/components/app/recipe-image";
 import { RateDialog } from "@/components/app/rate-dialog";
 import { CookMode } from "@/components/app/cook-mode";
 import { AddToShoppingDialog } from "@/components/app/add-to-shopping-dialog";
+import { RecipeWine } from "@/components/app/recipe-wine";
 import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useMe, useMemberNames, useRecipe, useSettings, useTags } from "@/lib/queries";
 import { DEFAULT_PLANNER } from "@/lib/types";
@@ -364,6 +365,13 @@ function RecipePage() {
           </Card>
         )}
       </section>
+
+      {/* Vin til retten */}
+      <RecipeWine
+        recipeId={recipe.id}
+        styleId={recipe.wine_style_id}
+        suggestion={recipe.wine_suggestion}
+      />
 
       {/* Historik */}
       <section className="mt-8">

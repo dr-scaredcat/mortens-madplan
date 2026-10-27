@@ -88,6 +88,22 @@ export async function saveRecipe(draft: RecipeDraft, id?: string): Promise<strin
   return recipeId!;
 }
 
+/** Gem "Vin til retten" på en opskrift. Tom kategori og tekst fjerner forslaget. */
+export async function saveRecipeWine(
+  id: string,
+  input: { wine_style_id: string | null; wine_suggestion: string },
+) {
+  unwrap(
+    await supabase
+      .from("recipes")
+      .update({
+        wine_style_id: input.wine_style_id,
+        wine_suggestion: input.wine_suggestion.trim() || null,
+      })
+      .eq("id", id),
+  );
+}
+
 export async function deleteRecipe(id: string) {
   unwrap(await supabase.from("recipes").delete().eq("id", id));
 }
