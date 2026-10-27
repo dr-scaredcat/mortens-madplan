@@ -49,6 +49,46 @@ export type Recipe = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  /** Vinkategori (public.wine_styles.id) — "Vin til retten" */
+  wine_style_id: string | null;
+  /** Konkrete forslag til områder/druer, fri tekst */
+  wine_suggestion: string | null;
+};
+
+// ─── Vin til retten ─────────────────────────────────────────────────────────
+// Kategorierne ligger i public.wine_styles og deles med Astons Bar.
+
+export type WineStyle = {
+  id: string;
+  /** "Rødvin", "Hvidvin" … */
+  wine_label: string;
+  /** "Let og frugtig" … */
+  style: string;
+  /** Vintypen i Astons Bar (rød, hvid …); null for øl */
+  bar_type: string | null;
+  neighbors: string[];
+  sort_order: number;
+};
+
+export type WinePlacement = { shelf: number; slot: number; depth: number; layer: number };
+
+/** En vin i vinkøleskabet, som passer til en kategori (madplan.wines_for_style). */
+export type StockWine = {
+  wine_id: string;
+  name: string;
+  producer: string | null;
+  vintage: number | null;
+  country: string | null;
+  region: string | null;
+  grapes: string | null;
+  image_url: string | null;
+  style_id: string | null;
+  style: string | null;
+  bottles: number;
+  placements: WinePlacement[];
+  /** praecis = samme kategori, naer = nabokategori, type = samme vintype */
+  match: "praecis" | "naer" | "type";
+  rank: number;
 };
 
 export type RecipeIngredient = {
